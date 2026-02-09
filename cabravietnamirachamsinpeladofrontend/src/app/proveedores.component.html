@@ -1,0 +1,250 @@
+<div class="container-fluid px-4">
+  <h1 class="mt-4">Gestión de Proveedores</h1>
+  <ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+    <li class="breadcrumb-item active">Proveedores</li>
+  </ol>
+
+  <!-- Barra de herramientas -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <i class="fas fa-truck me-1"></i>
+          Proveedores Registrados ({{ totalProveedores }})
+        </div>
+        <div class="col-md-6 text-end">
+          <button class="btn btn-primary" (click)="abrirModalNuevo()">
+            <i class="fas fa-plus me-1"></i>
+            Nuevo Proveedor
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Filtros y búsqueda -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <div class="input-group">
+            <input 
+              type="text" 
+              class="form-control" 
+              placeholder="Buscar por nombre, contacto o email..."
+              [(ngModel)]="busqueda"
+              (keyup.enter)="buscarProveedores()">
+            <button class="btn btn-outline-secondary" type="button" (click)="buscarProveedores()">
+              <i class="fas fa-search"></i>
+            </button>
+            <button class="btn btn-outline-secondary" type="button" (click)="limpiarBusqueda()" *ngIf="busqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-check">
+            <input 
+              class="form-check-input" 
+              type="checkbox" 
+              id="soloActivos"
+              [(ngModel)]="soloActivos"
+              (change)="cambiarFiltroActivos()">
+            <label class="form-check-label" for="soloActivos">
+              Solo proveedores activos
+            </label>
+          </div>
+        </div>
+        <div class="col-md-3 text-end">
+          <small class="text-muted">
+            Mostrando {{ proveedores.length }} de {{ totalProveedores }}
+          </small>
+        </div>
+      </div>
+
+      <!-- Loading spinner -->
+      <div *ngIf="cargando" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+
+      <!-- Tabla de proveedores -->
+      <div *ngIf="!cargando" class="table-responsive">
+        <table class="table table-bordered table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Contacto</th>
+              <th>Teléfono</th>
+              <th>Email</th>
+              <th>Dirección</th>
+              <th>Estado</th>
+              <th>Fecha Creación</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let proveedor of proveedores; trackBy: trackByProveedor">
+              <td>{{ proveedor.id }}</td>
+              <td><strong>{{ proveedor.nombre }}</strong></td>
+              <td>{{ proveedor.contacto }}</td>
+              <td>{{ proveedor.telefono }}</td>
+              <td>{{ proveedor.email }}</td>
+              <td>{{ proveedor.direccion }}</td>
+              <td>
+                <span class="badge" [class]="proveedor.activo ? 'bg-success' : 'bg-danger'">
+                  {{ proveedor.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td>{{ proveedor.fecha_creacion ? (proveedor.fecha_creacion | date:'dd/MM/yyyy') : 'N/A' }}</td>
+              <td>
+                <div class="btn-group btn-group-sm" role="group">
+                  <button 
+                    class="btn btn-outline-primary" 
+                    (click)="abrirModalEdicion(proveedor)"
+                    title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button 
+                    class="btn btn-outline-danger" 
+                    (click)="eliminarProveedor(proveedor)"
+                    *ngIf="proveedor.activo"
+                    title="Desactivar">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Mensaje si no hay proveedores -->
+        <div *ngIf="proveedores.length === 0" class="text-center py-4">
+          <i class="fas fa-truck fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No se encontraron proveedores</h5>
+          <p class="text-muted">
+            {{ busqueda ? 'Intenta con otros términos de búsqueda' : 'Comienza agregando tu primer proveedor' }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para agregar/editar proveedor -->
+<div class="modal fade" [class.show]="mostrarModal" [style.display]="mostrarModal ? 'block' : 'none'" 
+     tabindex="-1" *ngIf="mostrarModal">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          {{ esEdicion ? 'Editar Proveedor' : 'Nuevo Proveedor' }}
+        </h5>
+        <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+      </div>
+      
+      <form (ngSubmit)="guardarProveedor()" #proveedorForm="ngForm">
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="nombre" class="form-label">Nombre de la Empresa *</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="nombre"
+                  [(ngModel)]="nuevoProveedor.nombre"
+                  name="nombre"
+                  required
+                  placeholder="Ej: Ferretería Central S.A.">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="contacto" class="form-label">Persona de Contacto *</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="contacto"
+                  [(ngModel)]="nuevoProveedor.contacto"
+                  name="contacto"
+                  required
+                  placeholder="Ej: Juan Pérez">
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="telefono" class="form-label">Teléfono *</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="telefono"
+                  [(ngModel)]="nuevoProveedor.telefono"
+                  name="telefono"
+                  required
+                  placeholder="Ej: +54 11 4567-8900">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="email" class="form-label">Email *</label>
+                <input 
+                  type="email" 
+                  class="form-control" 
+                  id="email"
+                  [(ngModel)]="nuevoProveedor.email"
+                  name="email"
+                  required
+                  placeholder="Ej: ventas@empresa.com">
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="direccion" class="form-label">Dirección *</label>
+            <textarea 
+              class="form-control" 
+              id="direccion"
+              [(ngModel)]="nuevoProveedor.direccion"
+              name="direccion"
+              required
+              rows="2"
+              placeholder="Ej: Av. Corrientes 1234, CABA"></textarea>
+          </div>
+
+          <div class="form-check">
+            <input 
+              class="form-check-input" 
+              type="checkbox" 
+              id="activo"
+              [(ngModel)]="nuevoProveedor.activo"
+              name="activo">
+            <label class="form-check-label" for="activo">
+              Proveedor activo
+            </label>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModal()">
+            Cancelar
+          </button>
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+            [disabled]="cargando || !proveedorForm.form.valid">
+            <span *ngIf="cargando" class="spinner-border spinner-border-sm me-2"></span>
+            {{ esEdicion ? 'Actualizar' : 'Crear' }} Proveedor
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Backdrop del modal -->
+<div class="modal-backdrop fade show" *ngIf="mostrarModal"></div>

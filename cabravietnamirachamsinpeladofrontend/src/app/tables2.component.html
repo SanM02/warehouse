@@ -1,0 +1,479 @@
+<!-- ==========================================  -->
+<!-- 🏭 INVENTARIO INDUSTRIAL - Ferretería J&G -->
+<!-- ==========================================  -->
+
+<div class="inventario-industrial-wrapper">
+  
+  <!-- Header Industrial -->
+  <div class="header-industrial">
+    <div class="header-content">
+      <div class="title-group">
+        <i class="fas fa-warehouse header-icon"></i>
+        <h1 class="page-title">GESTIÓN DE INVENTARIO</h1>
+      </div>
+      <div class="title-underline"></div>
+    </div>
+  </div>
+
+  <!-- Botón Agregar Producto -->
+  <div class="add-product-section" *ngIf="!mostrarFormulario">
+    <button class="btn-add-product-industrial" (click)="mostrarFormularioNuevo()">
+      <i class="fas fa-plus-circle"></i>
+      <span>AGREGAR NUEVO PRODUCTO</span>
+    </button>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- FORMULARIO NUEVO PRODUCTO -->
+  <!-- ============================================ -->
+  <div class="form-card-industrial" *ngIf="mostrarFormulario">
+    <div class="form-header-industrial">
+      <div class="header-left">
+        <i class="fas fa-box-open"></i>
+        <span>NUEVO PRODUCTO</span>
+      </div>
+    </div>
+    
+    <div class="form-body-industrial">
+      <form class="form-industrial-grid">
+        <div class="form-row-industrial">
+          <div class="form-group-industrial small">
+            <label class="label-industrial">
+              <i class="fas fa-barcode"></i>
+              CÓDIGO
+            </label>
+            <input type="text" class="input-industrial" [(ngModel)]="nuevoProducto.codigo" name="codigo">
+          </div>
+          
+          <div class="form-group-industrial large">
+            <label class="label-industrial">
+              <i class="fas fa-tag"></i>
+              NOMBRE <span class="required">*</span>
+            </label>
+            <input type="text" class="input-industrial" [(ngModel)]="nuevoProducto.nombre" name="nombre" required>
+          </div>
+          
+          <div class="form-group-industrial medium">
+            <label class="label-industrial">
+              <i class="fas fa-folder"></i>
+              CATEGORÍA
+            </label>
+            <input type="text" class="input-industrial" [(ngModel)]="nuevoProducto.categoria" name="categoria">
+          </div>
+        </div>
+
+        <div class="form-row-industrial">
+          <div class="form-group-industrial small">
+            <label class="label-industrial">
+              <i class="fas fa-copyright"></i>
+              MARCA
+            </label>
+            <input type="text" class="input-industrial" [(ngModel)]="nuevoProducto.marca" name="marca">
+          </div>
+          
+          <div class="form-group-industrial medium">
+            <label class="label-industrial">
+              <i class="fas fa-car"></i>
+              MODELO COMPATIBLE
+            </label>
+            <input type="text" class="input-industrial" [(ngModel)]="nuevoProducto.modeloCompatible" name="modeloCompatible">
+          </div>
+          
+          <div class="form-group-industrial large">
+            <label class="label-industrial">
+              <i class="fas fa-map-marker-alt"></i>
+              UBICACIÓN FÍSICA
+            </label>
+            <input type="text" class="input-industrial" [(ngModel)]="nuevoProducto.ubicacion" name="ubicacion" placeholder="Ej: Estante A3">
+          </div>
+        </div>
+
+        <div class="form-row-industrial">
+          <div class="form-group-industrial full">
+            <label class="label-industrial">
+              <i class="fas fa-align-left"></i>
+              DESCRIPCIÓN
+            </label>
+            <textarea class="textarea-industrial" [(ngModel)]="nuevoProducto.descripcion" name="descripcion" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="form-row-industrial">
+          <div class="form-group-industrial xsmall">
+            <label class="label-industrial">
+              <i class="fas fa-boxes"></i>
+              STOCK INICIAL
+            </label>
+            <input type="number" class="input-industrial" [(ngModel)]="nuevoProducto.cantidad" name="cantidad" min="0">
+          </div>
+          
+          <div class="form-group-industrial xsmall">
+            <label class="label-industrial">
+              <i class="fas fa-exclamation-triangle"></i>
+              STOCK MÍNIMO
+            </label>
+            <input type="number" class="input-industrial" [(ngModel)]="nuevoProducto.stockMinimo" name="stockMinimo" min="0">
+          </div>
+          
+          <div class="form-group-industrial medium">
+            <label class="label-industrial">
+              <i class="fas fa-dollar-sign"></i>
+              PRECIO COSTO (₲)
+            </label>
+            <input type="number" class="input-industrial" [(ngModel)]="nuevoProducto.precioCosto" name="precioCosto" min="0" (ngModelChange)="calcularPrecioVenta()">
+          </div>
+          
+          <div class="form-group-industrial medium">
+            <label class="label-industrial">
+              <i class="fas fa-money-bill-wave"></i>
+              PRECIO VENTA (₲) <small>(+30%)</small>
+            </label>
+            <input type="number" class="input-industrial readonly-input" [(ngModel)]="nuevoProducto.precioVenta" name="precioVenta" min="0" readonly>
+          </div>
+          
+          <div class="form-group-industrial small">
+            <label class="label-industrial">
+              <i class="fas fa-truck"></i>
+              PROVEEDOR
+            </label>
+            <input type="text" class="input-industrial" [(ngModel)]="nuevoProducto.proveedor" name="proveedor">
+          </div>
+        </div>
+      </form>
+
+      <div class="form-actions-industrial">
+        <button class="btn-form-industrial btn-save" (click)="guardarNuevoProducto()" [disabled]="guardando">
+          <span *ngIf="!guardando">
+            <i class="fas fa-save"></i>
+            <span>GUARDAR</span>
+          </span>
+          <span *ngIf="guardando">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>GUARDANDO...</span>
+          </span>
+        </button>
+        <button class="btn-form-industrial btn-cancel" (click)="cancelarNuevo()" [disabled]="guardando">
+          <i class="fas fa-times"></i>
+          <span>CANCELAR</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- TABLA DE PRODUCTOS -->
+  <!-- ============================================ -->
+  <div class="main-card-industrial">
+    
+    <!-- Card Header -->
+    <div class="card-header-industrial">
+      <div class="header-left">
+        <i class="fas fa-boxes"></i>
+        <span>LISTADO DE PRODUCTOS</span>
+      </div>
+      <div class="header-decoration"></div>
+    </div>
+
+    <!-- Card Body -->
+    <div class="card-body-industrial">
+      
+      <!-- Buscador -->
+      <div class="search-bar-industrial">
+        <label class="search-label">
+          <i class="fas fa-search"></i>
+          BUSCAR
+        </label>
+        <div class="search-input-wrapper">
+          <input 
+            type="text" 
+            class="search-input-industrial" 
+            placeholder="Código, nombre o categoría..." 
+            [(ngModel)]="search">
+          <div class="input-border-effect"></div>
+        </div>
+      </div>
+
+      <!-- Tabla Industrial -->
+      <div class="table-wrapper-industrial">
+        <table class="table-industrial">
+          <thead class="thead-industrial">
+            <tr>
+              <th><i class="fas fa-barcode"></i> CÓDIGO</th>
+              <th><i class="fas fa-tag"></i> NOMBRE</th>
+              <th><i class="fas fa-align-left"></i> DESCRIPCIÓN</th>
+              <th><i class="fas fa-folder"></i> CATEGORÍA</th>
+              <th><i class="fas fa-copyright"></i> MARCA</th>
+              <th><i class="fas fa-car"></i> MODELO</th>
+              <th><i class="fas fa-boxes"></i> STOCK</th>
+              <th><i class="fas fa-exclamation-triangle"></i> MÍN</th>
+              <th><i class="fas fa-dollar-sign"></i> COSTO</th>
+              <th><i class="fas fa-money-bill-wave"></i> VENTA</th>
+              <th><i class="fas fa-map-marker-alt"></i> UBICACIÓN</th>
+              <th><i class="fas fa-truck"></i> PROVEEDOR</th>
+              <th><i class="fas fa-cogs"></i> ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody class="tbody-industrial">
+            <tr *ngFor="let p of productosPaginados; let i = index" 
+                class="row-industrial"
+                [style.animation-delay]="(i * 0.05) + 's'">
+              
+              <td><code class="code-badge">{{ p.codigo || '-' }}</code></td>
+              <td class="cell-highlight">{{ p.nombre }}</td>
+              <td class="cell-description">
+                <span *ngIf="p.descripcion">{{ p.descripcion.substring(0, 50) }}{{ p.descripcion.length > 50 ? '...' : '' }}</span>
+                <span *ngIf="!p.descripcion" class="text-muted">-</span>
+              </td>
+              <td>
+                <span class="badge-industrial" [ngStyle]="getCategoriaBadgeStyle(p.categoria)">
+                  {{ p.categoria }}
+                </span>
+              </td>
+              <td>{{ p.marca }}</td>
+              <td>{{ p.modeloCompatible }}</td>
+              <td>
+                <span class="stock-badge" [class.stock-low]="p.cantidad < p.stockMinimo">
+                  {{ p.cantidad }}
+                </span>
+              </td>
+              <td>
+                <span class="stock-min-badge">{{ p.stockMinimo }}</span>
+              </td>
+              <td>
+                <span class="price-badge price-costo">₲{{ p.precioCosto | number:'1.0-0' }}</span>
+              </td>
+              <td>
+                <span class="price-badge price-venta">₲{{ p.precioVenta | number:'1.0-0' }}</span>
+              </td>
+              <td>
+                <span class="ubicacion-badge">
+                  <i class="fas fa-map-pin"></i>
+                  {{ p.ubicacion || '-' }}
+                </span>
+              </td>
+              <td>{{ p.proveedor || '-' }}</td>
+              <td>
+                <div class="action-buttons-industrial">
+                  <button 
+                    class="btn-industrial btn-edit" 
+                    (click)="abrirModalEditar(p)" 
+                    title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button 
+                    class="btn-industrial btn-delete" 
+                    (click)="eliminarProducto(p)" 
+                    title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="productosPaginados.length === 0">
+              <td colspan="13" class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>No hay productos para mostrar</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación Industrial -->
+      <div class="pagination-info" *ngIf="productosFiltrados.length > pageSize">
+        <div class="info-text">
+          Mostrando {{ (page - 1) * pageSize + 1 }} - {{ Math.min(page * pageSize, productosFiltrados.length) }} 
+          de {{ productosFiltrados.length }} productos
+        </div>
+      </div>
+
+      <nav *ngIf="totalPaginas > 1" class="pagination-industrial">
+        <button 
+          class="pagination-btn" 
+          [class.disabled]="page === 1" 
+          (click)="page = page - 1" 
+          [disabled]="page === 1">
+          <i class="fas fa-chevron-left"></i>
+          <span>ANTERIOR</span>
+        </button>
+        
+        <div class="pagination-numbers">
+          <button 
+            *ngFor="let dummy of [].constructor(totalPaginas); let i = index" 
+            class="pagination-number"
+            [class.active]="page === (i+1)"
+            (click)="page = i + 1">
+            {{ i + 1 }}
+          </button>
+        </div>
+        
+        <button 
+          class="pagination-btn" 
+          [class.disabled]="page === totalPaginas" 
+          (click)="page = page + 1" 
+          [disabled]="page === totalPaginas">
+          <span>SIGUIENTE</span>
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </nav>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL DE EDICIÓN INDUSTRIAL -->
+<!-- ============================================ -->
+<div *ngIf="mostrarModalEdicion" class="modal-backdrop-industrial"></div>
+<div *ngIf="mostrarModalEdicion" class="modal-industrial">
+  <div class="modal-container-industrial">
+    
+    <!-- Modal Header -->
+    <div class="modal-header-industrial">
+      <div class="modal-title-group">
+        <i class="fas fa-edit"></i>
+        <h3>EDITAR PRODUCTO</h3>
+      </div>
+      <button class="btn-close-industrial" (click)="cerrarModalEdicion()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body-industrial">
+      <form *ngIf="productoEditando" class="form-industrial">
+        
+        <div class="form-row-industrial">
+          <div class="form-group-modal small">
+            <label class="modal-label-industrial">
+              <i class="fas fa-barcode"></i>
+              CÓDIGO
+            </label>
+            <input type="text" class="modal-input-industrial" [(ngModel)]="productoEditando.codigo" name="codigo">
+          </div>
+          
+          <div class="form-group-modal large">
+            <label class="modal-label-industrial">
+              <i class="fas fa-tag"></i>
+              NOMBRE <span class="required">*</span>
+            </label>
+            <input type="text" class="modal-input-industrial" [(ngModel)]="productoEditando.nombre" name="nombre" required>
+          </div>
+          
+          <div class="form-group-modal medium">
+            <label class="modal-label-industrial">
+              <i class="fas fa-folder"></i>
+              CATEGORÍA
+            </label>
+            <input type="text" class="modal-input-industrial" [(ngModel)]="productoEditando.categoria" name="categoria">
+          </div>
+        </div>
+
+        <div class="form-row-industrial">
+          <div class="form-group-modal small">
+            <label class="modal-label-industrial">
+              <i class="fas fa-copyright"></i>
+              MARCA
+            </label>
+            <input type="text" class="modal-input-industrial" [(ngModel)]="productoEditando.marca" name="marca">
+          </div>
+          
+          <div class="form-group-modal medium">
+            <label class="modal-label-industrial">
+              <i class="fas fa-car"></i>
+              MODELO COMPATIBLE
+            </label>
+            <input type="text" class="modal-input-industrial" [(ngModel)]="productoEditando.modeloCompatible" name="modeloCompatible">
+          </div>
+          
+          <div class="form-group-modal large">
+            <label class="modal-label-industrial">
+              <i class="fas fa-map-marker-alt"></i>
+              UBICACIÓN FÍSICA
+            </label>
+            <input type="text" class="modal-input-industrial" [(ngModel)]="productoEditando.ubicacion" name="ubicacion" placeholder="Ej: Estante A3">
+          </div>
+        </div>
+
+        <div class="form-row-industrial">
+          <div class="form-group-modal full">
+            <label class="modal-label-industrial">
+              <i class="fas fa-align-left"></i>
+              DESCRIPCIÓN
+            </label>
+            <textarea class="modal-textarea-industrial" [(ngModel)]="productoEditando.descripcion" name="descripcion" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="form-row-industrial">
+          <div class="form-group-modal xsmall">
+            <label class="modal-label-industrial">
+              <i class="fas fa-boxes"></i>
+              STOCK ACTUAL
+            </label>
+            <input type="number" class="modal-input-industrial" [(ngModel)]="productoEditando.cantidad" name="cantidad" min="0">
+       </div>
+          
+          <div class="form-group-modal xsmall">
+            <label class="modal-label-industrial">
+              <i class="fas fa-exclamation-triangle"></i>
+              STOCK MÍNIMO
+            </label>
+            <input type="number" class="modal-input-industrial" [(ngModel)]="productoEditando.stockMinimo" name="stockMinimo" min="0">
+          </div>
+          
+          <div class="form-group-modal medium">
+            <label class="modal-label-industrial">
+              <i class="fas fa-dollar-sign"></i>
+              PRECIO COSTO (₲)
+            </label>
+            <input type="number" class="modal-input-industrial" [(ngModel)]="productoEditando.precioCosto" name="precioCosto" min="0" (ngModelChange)="calcularPrecioVentaEdicion()">
+          </div>
+          
+          <div class="form-group-modal medium">
+            <label class="modal-label-industrial">
+              <i class="fas fa-money-bill-wave"></i>
+              PRECIO VENTA (₲) <small>(+30%)</small>
+            </label>
+            <input type="number" class="modal-input-industrial readonly-input" [(ngModel)]="productoEditando.precioVenta" name="precioVenta" min="0" readonly>
+          </div>
+          
+          <div class="form-group-modal small">
+            <label class="modal-label-industrial">
+              <i class="fas fa-truck"></i>
+              PROVEEDOR
+            </label>
+            <input type="text" class="modal-input-industrial" [(ngModel)]="productoEditando.proveedor" name="proveedor">
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer-industrial">
+      <button 
+        class="btn-modal-industrial btn-modal-cancel" 
+        (click)="cerrarModalEdicion()" 
+        [disabled]="guardando">
+        <i class="fas fa-times"></i>
+        <span>CANCELAR</span>
+      </button>
+      <button 
+        class="btn-modal-industrial btn-modal-save" 
+        (click)="guardarEdicion()" 
+        [disabled]="guardando">
+        <span *ngIf="!guardando">
+          <i class="fas fa-save"></i>
+          <span>GUARDAR CAMBIOS</span>
+        </span>
+        <span *ngIf="guardando">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span>GUARDANDO...</span>
+        </span>
+      </button>
+    </div>
+    
+  </div>
+</div>

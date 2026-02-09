@@ -1,0 +1,334 @@
+﻿<div class="container-fluid px-4">
+  <!-- Encabezado -->
+  <h1 class="mt-4">
+    <i class="fas fa-users me-2 text-primary"></i>Gestion de Clientes
+  </h1>
+  <ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a routerLink="/">Inicio</a></li>
+    <li class="breadcrumb-item active">Clientes</li>
+  </ol>
+
+  <!-- Card de Filtros -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-light">
+      <i class="fas fa-filter me-2"></i>Filtros de Busqueda
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <!-- Busqueda -->
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Buscar:</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white">
+              <i class="fas fa-search text-muted"></i>
+            </span>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="busqueda"
+              placeholder="Nombre, documento, email..."
+              (keyup.enter)="buscar()">
+          </div>
+        </div>
+
+        <!-- Filtro por tipo -->
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">Tipo Doc:</label>
+          <select class="form-select" [(ngModel)]="filtroTipo" (change)="buscar()">
+            <option value="">Todos</option>
+            <option value="cedula">Cedula</option>
+            <option value="ruc">RUC</option>
+            <option value="ninguno">Sin documento</option>
+          </select>
+        </div>
+
+        <!-- Solo activos -->
+        <div class="col-md-2">
+          <div class="form-check mt-4">
+            <input 
+              class="form-check-input" 
+              type="checkbox" 
+              [(ngModel)]="soloActivos"
+              (change)="buscar()"
+              id="soloActivos">
+            <label class="form-check-label" for="soloActivos">
+              Solo activos
+            </label>
+          </div>
+        </div>
+
+        <!-- Contador -->
+        <div class="col-md-2 text-center">
+          <span class="badge bg-primary fs-6 px-3 py-2">
+            {{ totalClientes }} clientes
+          </span>
+        </div>
+
+        <!-- Botones -->
+        <div class="col-md-2 text-end">
+          <button class="btn btn-outline-secondary me-2" (click)="limpiarFiltros()" title="Limpiar filtros">
+            <i class="fas fa-times"></i>
+          </button>
+          <button class="btn btn-success" (click)="abrirModalNuevo()">
+            <i class="fas fa-plus me-1"></i>Nuevo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de Clientes -->
+  <div class="card mb-4 shadow">
+    <div class="card-header bg-primary text-white">
+      <i class="fas fa-table me-2"></i>Listado de Clientes
+    </div>
+    <div class="card-body">
+      <!-- Loading -->
+      <div *ngIf="cargando" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Cargando clientes...</p>
+      </div>
+
+      <!-- Tabla -->
+      <div *ngIf="!cargando" class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 130px;">Documento</th>
+              <th>Cliente</th>
+              <th style="width: 150px;">Telefono</th>
+              <th>Email</th>
+              <th class="text-center" style="width: 100px;">Compras</th>
+              <th class="text-end" style="width: 150px;">Total Gastado</th>
+              <th class="text-center" style="width: 90px;">Estado</th>
+              <th class="text-center" style="width: 140px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let cliente of clientes" 
+                [class.table-secondary]="!cliente.activo"
+                class="cliente-row">
+              <td>
+                <span class="badge" 
+                      [ngClass]="cliente.tipo_documento === 'ruc' ? 'bg-info' : 
+                                 cliente.tipo_documento === 'cedula' ? 'bg-warning text-dark' : 
+                                 'bg-secondary'">
+                  {{ cliente.tipo_documento === 'ruc' ? 'RUC' : 
+                     cliente.tipo_documento === 'cedula' ? 'CI' : 'S/D' }}
+                </span>
+                <br>
+                <small class="text-muted">{{ cliente.numero_documento || 'Sin documento' }}</small>
+              </td>
+              <td>
+                <strong class="text-dark">{{ cliente.nombre }}</strong>
+                <br *ngIf="cliente.direccion">
+                <small class="text-muted" *ngIf="cliente.direccion">
+                  <i class="fas fa-map-marker-alt me-1 text-danger"></i>{{ cliente.direccion | slice:0:40 }}{{ cliente.direccion && cliente.direccion.length > 40 ? '...' : '' }}
+                </small>
+              </td>
+              <td>
+                <span *ngIf="cliente.telefono">
+                  <i class="fas fa-phone me-1 text-success"></i>{{ cliente.telefono }}
+                </span>
+                <span *ngIf="!cliente.telefono" class="text-muted">-</span>
+              </td>
+              <td>
+                <small *ngIf="cliente.email">
+                  <i class="fas fa-envelope me-1 text-primary"></i>{{ cliente.email }}
+                </small>
+                <span *ngIf="!cliente.email" class="text-muted">-</span>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-primary rounded-pill px-3">{{ cliente.total_compras || 0 }}</span>
+              </td>
+              <td class="text-end">
+                <strong class="text-success fs-6">
+                  Gs {{ cliente.monto_total_compras | number:'1.0-0' }}
+                </strong>
+              </td>
+              <td class="text-center">
+                <span class="badge rounded-pill px-3" [ngClass]="cliente.activo ? 'bg-success' : 'bg-danger'">
+                  {{ cliente.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-primary" 
+                          (click)="abrirModalEditar(cliente)"
+                          title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn" 
+                          [ngClass]="cliente.activo ? 'btn-outline-warning' : 'btn-outline-success'"
+                          (click)="toggleActivo(cliente)"
+                          [title]="cliente.activo ? 'Desactivar' : 'Activar'">
+                    <i class="fas" [ngClass]="cliente.activo ? 'fa-ban' : 'fa-check'"></i>
+                  </button>
+                  <button class="btn btn-outline-danger" 
+                          (click)="confirmarEliminar(cliente)"
+                          title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            
+            <!-- Mensaje si no hay datos -->
+            <tr *ngIf="clientes.length === 0">
+              <td colspan="8" class="text-center py-5">
+                <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                <p class="text-muted mb-0">No hay clientes registrados</p>
+                <button class="btn btn-primary mt-3" (click)="abrirModalNuevo()">
+                  <i class="fas fa-plus me-2"></i>Agregar primer cliente
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginacion -->
+      <nav *ngIf="totalPaginas > 1" class="mt-4">
+        <ul class="pagination justify-content-center mb-0">
+          <li class="page-item" [class.disabled]="paginaActual === 1">
+            <a class="page-link" (click)="cambiarPagina(paginaActual - 1)">
+              <i class="fas fa-chevron-left"></i>
+            </a>
+          </li>
+          <li class="page-item" 
+              *ngFor="let p of paginasArray"
+              [class.active]="paginaActual === p">
+            <a class="page-link" (click)="cambiarPagina(p)">{{ p }}</a>
+          </li>
+          <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+            <a class="page-link" (click)="cambiarPagina(paginaActual + 1)">
+              <i class="fas fa-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL DE CREAR/EDITAR CLIENTE -->
+<!-- ============================================ -->
+<div class="modal-backdrop fade show" *ngIf="mostrarModal"></div>
+<div class="modal fade show d-block" *ngIf="mostrarModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content shadow-lg">
+      
+      <!-- Header -->
+      <div class="modal-header" [ngClass]="esEdicion ? 'bg-warning' : 'bg-success'" 
+           [class.text-dark]="esEdicion" [class.text-white]="!esEdicion">
+        <h5 class="modal-title">
+          <i class="fas me-2" [ngClass]="esEdicion ? 'fa-edit' : 'fa-user-plus'"></i>
+          {{ esEdicion ? 'Editar Cliente' : 'Nuevo Cliente' }}
+        </h5>
+        <button type="button" class="btn-close" 
+                [class.btn-close-white]="!esEdicion"
+                (click)="cerrarModal()"></button>
+      </div>
+      
+      <!-- Body -->
+      <div class="modal-body p-4">
+        <div class="row g-4">
+          
+          <!-- Tipo de documento -->
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-id-card me-1 text-primary"></i>Tipo de Documento
+            </label>
+            <select class="form-select form-select-lg" [(ngModel)]="nuevoCliente.tipo_documento">
+              <option value="cedula">Cedula de Identidad</option>
+              <option value="ruc">RUC</option>
+              <option value="ninguno">Sin documento (Consumidor Final)</option>
+            </select>
+          </div>
+
+          <!-- Numero de documento -->
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-hashtag me-1 text-primary"></i>Numero de Documento
+              <span class="text-danger" *ngIf="nuevoCliente.tipo_documento !== 'ninguno'">*</span>
+            </label>
+            <input 
+              type="text" 
+              class="form-control form-control-lg" 
+              [(ngModel)]="nuevoCliente.numero_documento"
+              [disabled]="nuevoCliente.tipo_documento === 'ninguno'"
+              [placeholder]="nuevoCliente.tipo_documento === 'ruc' ? 'Ej: 1234567-8' : 'Numero de cedula'">
+            <small class="text-muted" *ngIf="nuevoCliente.tipo_documento === 'ninguno'">
+              No se requiere documento para Consumidor Final
+            </small>
+          </div>
+
+          <!-- Nombre -->
+          <div class="col-12">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-user me-1 text-primary"></i>Nombre / Razon Social
+              <span class="text-danger">*</span>
+            </label>
+            <input 
+              type="text" 
+              class="form-control form-control-lg" 
+              [(ngModel)]="nuevoCliente.nombre"
+              placeholder="Nombre completo o razon social">
+          </div>
+
+          <!-- Email -->
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-envelope me-1 text-primary"></i>Email
+            </label>
+            <input 
+              type="email" 
+              class="form-control" 
+              [(ngModel)]="nuevoCliente.email"
+              placeholder="correo@ejemplo.com">
+          </div>
+
+          <!-- Telefono -->
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-phone me-1 text-primary"></i>Telefono
+            </label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="nuevoCliente.telefono"
+              placeholder="0981 123 456">
+          </div>
+
+          <!-- Direccion -->
+          <div class="col-12">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-map-marker-alt me-1 text-primary"></i>Direccion
+            </label>
+            <textarea 
+              class="form-control" 
+              [(ngModel)]="nuevoCliente.direccion"
+              rows="2"
+              placeholder="Direccion completa del cliente"></textarea>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-outline-secondary btn-lg" (click)="cerrarModal()">
+          <i class="fas fa-times me-2"></i>Cancelar
+        </button>
+        <button type="button" class="btn btn-lg" 
+                [ngClass]="esEdicion ? 'btn-warning' : 'btn-success'"
+                (click)="guardarCliente()"
+                [disabled]="guardando">
+          <span *ngIf="guardando" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!guardando" class="fas fa-save me-2"></i>
+          {{ esEdicion ? 'Actualizar' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

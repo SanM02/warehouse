@@ -1,0 +1,405 @@
+<div class="container-fluid">
+  <!-- Encabezado -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2 class="h3 mb-3">
+        <i class="fas fa-truck-loading text-success me-2"></i>
+        Recepción de Mercancía
+      </h2>
+      <p class="text-muted">Registra la mercancía recibida para actualizar automáticamente el inventario</p>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="card-title mb-0">Filtros de Búsqueda</h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Orden de Compra:</label>
+          <select class="form-select" [(ngModel)]="filtroOrden">
+            <option [value]="null">Todas las órdenes</option>
+            <option *ngFor="let orden of ordenesPendientes" [value]="orden.id">
+              {{ orden.numero_orden }}
+            </option>
+          </select>
+        </div>
+        
+        <div class="col-md-2">
+          <label class="form-label">Fecha Inicio:</label>
+          <input type="date" class="form-control" [(ngModel)]="fechaInicio">
+        </div>
+        
+        <div class="col-md-2">
+          <label class="form-label">Fecha Fin:</label>
+          <input type="date" class="form-control" [(ngModel)]="fechaFin">
+        </div>
+        
+        <div class="col-md-3">
+          <label class="form-label">Usuario:</label>
+          <input type="text" class="form-control" [(ngModel)]="filtroUsuario" placeholder="Buscar por usuario...">
+        </div>
+        
+        <div class="col-md-2 d-flex align-items-end">
+          <div class="btn-group w-100">
+            <button type="button" class="btn btn-primary" (click)="aplicarFiltros()">
+              <i class="fas fa-search"></i> Buscar
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="limpiarFiltros()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botón Nueva Recepción -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <button type="button" class="btn btn-success" (click)="abrirModalNueva()">
+        <i class="fas fa-plus me-2"></i>Nueva Recepción
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla de Recepciones -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="card-title mb-0">
+        Lista de Recepciones ({{ totalRecepciones }} total)
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>Número</th>
+              <th>Orden de Compra</th>
+              <th>Fecha Recepción</th>
+              <th>Usuario</th>
+              <th>Total Recibido</th>
+              <th>Estado</th>
+              <th>Productos</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="cargando">
+              <td colspan="8" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2 mb-0">Cargando recepciones...</p>
+              </td>
+            </tr>
+            
+            <tr *ngIf="!cargando && recepciones.length === 0">
+              <td colspan="8" class="text-center py-4">
+                <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                <p class="mb-0 text-muted">No hay recepciones registradas</p>
+              </td>
+            </tr>
+            
+            <tr *ngFor="let recepcion of recepciones; trackBy: trackByRecepcion" class="align-middle">
+              <td>
+                <strong>{{ recepcion.numero_recepcion }}</strong>
+              </td>
+              <td>{{ obtenerNombreOrden(recepcion.orden_compra) }}</td>
+              <td>{{ recepcion.fecha_recepcion | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ recepcion.usuario_recibe }}</td>
+              <td>
+                <strong>{{ recepcion.total_recibido | currency:'USD':'symbol':'1.2-2' }}</strong>
+              </td>
+              <td>
+                <span class="badge" [class]="obtenerEstadoBadge(recepcion.estado || '')">
+                  {{ recepcion.estado | titlecase }}
+                </span>
+              </td>
+              <td>
+                <span class="badge bg-info">{{ recepcion.detalles.length || 0 }} items</span>
+              </td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <button type="button" 
+                          class="btn btn-outline-primary" 
+                          (click)="verDetalles(recepcion)"
+                          title="Ver Detalles">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  
+                  <button type="button" 
+                          class="btn btn-outline-danger" 
+                          (click)="eliminarRecepcion(recepcion)"
+                          title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nueva Recepción -->
+<div class="modal fade" 
+     [class.show]="mostrarModal" 
+     [style.display]="mostrarModal ? 'block' : 'none'"
+     tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-truck-loading me-2"></i>
+          Nueva Recepción de Mercancía
+        </h5>
+        <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+      </div>
+      
+      <div class="modal-body">
+        <form>
+          <!-- Selección de Orden -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Orden de Compra <span class="text-danger">*</span></label>
+              <select class="form-select" 
+                      [(ngModel)]="nuevaRecepcion.orden_compra" 
+                      name="ordenCompra" 
+                      (change)="seleccionarOrden()"
+                      required>
+                <option value="0">Seleccionar orden de compra...</option>
+                <option *ngFor="let orden of ordenesPendientes" [value]="orden.id">
+                  {{ orden.numero_orden }} - {{ orden.proveedor_nombre }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label">Observaciones</label>
+              <textarea class="form-control" 
+                        rows="2" 
+                        [(ngModel)]="nuevaRecepcion.observaciones" 
+                        name="observaciones"
+                        placeholder="Comentarios sobre la recepción..."></textarea>
+            </div>
+          </div>
+
+          <!-- Información de la Orden Seleccionada -->
+          <div class="card mb-4" *ngIf="ordenSeleccionada">
+            <div class="card-header bg-info text-white">
+              <h6 class="card-title mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                Información de la Orden: {{ ordenSeleccionada.numero_orden }}
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-3">
+                  <small class="text-muted">Proveedor:</small>
+                  <p class="mb-1"><strong>{{ ordenSeleccionada.proveedor_nombre }}</strong></p>
+                </div>
+                <div class="col-md-3">
+                  <small class="text-muted">Fecha Esperada:</small>
+                  <p class="mb-1">{{ ordenSeleccionada.fecha_esperada | date:'dd/MM/yyyy' }}</p>
+                </div>
+                <div class="col-md-3">
+                  <small class="text-muted">Total Estimado:</small>
+                  <p class="mb-1">{{ ordenSeleccionada.total_estimado | currency:'USD':'symbol':'1.2-2' }}</p>
+                </div>
+                <div class="col-md-3">
+                  <small class="text-muted">Estado:</small>
+                  <p class="mb-1">
+                    <span class="badge bg-warning">{{ ordenSeleccionada.estado | titlecase }}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Productos a Recibir -->
+          <div class="card" *ngIf="nuevaRecepcion.detalles.length > 0">
+            <div class="card-header">
+              <h6 class="card-title mb-0">
+                <i class="fas fa-boxes me-2"></i>
+                Productos a Recibir
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Producto</th>
+                      <th class="text-center">Solicitado</th>
+                      <th class="text-center">Recibido <span class="text-danger">*</span></th>
+                      <th class="text-end">Precio Unit.</th>
+                      <th class="text-end">Subtotal</th>
+                      <th>Observaciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let detalle of (nuevaRecepcion.detalles || []); trackBy: trackByDetalle">
+                      <td>
+                        <strong>{{ detalle.producto_nombre }}</strong>
+                      </td>
+                      <td class="text-center">
+                        <span class="badge bg-secondary">{{ detalle.cantidad_solicitada }}</span>
+                      </td>
+                      <td class="text-center">
+                        <input type="number" 
+                               class="form-control form-control-sm text-center" 
+                               [(ngModel)]="detalle.cantidad_recibida"
+                               [name]="'cantidadRecibida_' + detalle.detalle_orden"
+                               min="0"
+                               [max]="detalle.cantidad_solicitada || 999999"
+                               (input)="validarCantidad(detalle)"
+                               style="width: 80px;">
+                      </td>
+                      <td class="text-end">{{ detalle.precio_unitario | currency:'USD':'symbol':'1.2-2' }}</td>
+                      <td class="text-end">
+                        <strong>{{ detalle.subtotal | currency:'USD':'symbol':'1.2-2' }}</strong>
+                      </td>
+                      <td>
+                        <input type="text" 
+                               class="form-control form-control-sm" 
+                               [(ngModel)]="detalle.observaciones"
+                               [name]="'observaciones_' + detalle.detalle_orden"
+                               placeholder="Comentarios...">
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="table-success">
+                      <th colspan="4" class="text-end">Total Recibido:</th>
+                      <th class="text-end">{{ calcularTotalRecibido() | currency:'USD':'symbol':'1.2-2' }}</th>
+                      <th></th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              
+              <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Importante:</strong> Al procesar esta recepción, el inventario se actualizará automáticamente 
+                con las cantidades recibidas y se modificará el estado de la orden de compra según corresponda.
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cerrarModal()">
+          Cancelar
+        </button>
+        <button type="button" 
+                class="btn btn-success" 
+                (click)="procesarRecepcion()"
+                [disabled]="procesandoRecepcion || !nuevaRecepcion.orden_compra || nuevaRecepcion.detalles.length === 0">
+          <span *ngIf="procesandoRecepcion" class="spinner-border spinner-border-sm me-2"></span>
+          <i class="fas fa-check me-2" *ngIf="!procesandoRecepcion"></i>
+          Procesar Recepción
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalles de Recepción -->
+<div class="modal fade" 
+     [class.show]="mostrarModalDetalles" 
+     [style.display]="mostrarModalDetalles ? 'block' : 'none'"
+     tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" *ngIf="recepcionSeleccionada">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-eye me-2"></i>
+          Detalles de Recepción: {{ recepcionSeleccionada.numero_recepcion }}
+        </h5>
+        <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Información General -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h6>Información General</h6>
+            <table class="table table-sm table-borderless">
+              <tr>
+                <td><strong>Orden de Compra:</strong></td>
+                <td>{{ obtenerNombreOrden(recepcionSeleccionada.orden_compra) }}</td>
+              </tr>
+              <tr>
+                <td><strong>Fecha Recepción:</strong></td>
+                <td>{{ recepcionSeleccionada.fecha_recepcion | date:'dd/MM/yyyy HH:mm' }}</td>
+              </tr>
+              <tr>
+                <td><strong>Usuario:</strong></td>
+                <td>{{ recepcionSeleccionada.usuario_recibe }}</td>
+              </tr>
+              <tr>
+                <td><strong>Estado:</strong></td>
+                <td>
+                  <span class="badge" [class]="obtenerEstadoBadge(recepcionSeleccionada.estado || '')">
+                    {{ recepcionSeleccionada.estado | titlecase }}
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <h6>Observaciones</h6>
+            <p class="text-muted">{{ recepcionSeleccionada.observaciones || 'Sin observaciones' }}</p>
+            
+            <h6>Total Recibido</h6>
+            <p class="h4 text-success">{{ recepcionSeleccionada.total_recibido | currency:'USD':'symbol':'1.2-2' }}</p>
+          </div>
+        </div>
+
+        <!-- Detalles de Productos -->
+        <div class="table-responsive">
+          <h6>Productos Recibidos</h6>
+          <table class="table table-sm table-striped">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th class="text-center">Cantidad</th>
+                <th class="text-end">Precio Unit.</th>
+                <th class="text-end">Subtotal</th>
+                <th>Observaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let detalle of (recepcionSeleccionada?.detalles || [])">
+                <td>{{ detalle.producto_nombre }}</td>
+                <td class="text-center">{{ detalle.cantidad_recibida }}</td>
+                <td class="text-end">{{ detalle.precio_unitario | currency:'USD':'symbol':'1.2-2' }}</td>
+                <td class="text-end">{{ detalle.subtotal | currency:'USD':'symbol':'1.2-2' }}</td>
+                <td>{{ detalle.observaciones || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cerrarModal()">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Backdrop del modal -->
+<div class="modal-backdrop fade" 
+     [class.show]="mostrarModal || mostrarModalDetalles" 
+     *ngIf="mostrarModal || mostrarModalDetalles"
+     (click)="cerrarModal()"></div>

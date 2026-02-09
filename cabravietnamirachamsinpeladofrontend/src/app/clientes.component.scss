@@ -1,0 +1,67 @@
+/* ============================================
+   ESTILOS COMPONENTE CLIENTES - PROFESIONAL
+   ============================================ */
+
+/* Filas de la tabla con efecto hover */
+.cliente-row {
+  transition: all 0.2s ease;
+}
+
+.cliente-row:hover {
+  background-color: #e3f2fd !important;
+  transform: scale(1.002);
+}
+
+/* Modal backdrop y estilos */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+}
+
+.modal {
+  z-index: 1050;
+}
+
+.modal-content {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.modal-header {
+  border-bottom: none;
+}
+
+.modal-footer {
+  border-top: none;
+}
+
+/* Badges personalizados */
+.badge {
+  font-weight: 500;
+}
+
+/* Botones de accion */
+.btn-group-sm .btn {
+  padding: 0.35rem 0.6rem;
+}
+
+/* Card headers */
+.card-header {
+  font-weight: 600;
+}
+
+/* Paginacion */
+.pagination .page-link {
+  cursor: pointer;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}

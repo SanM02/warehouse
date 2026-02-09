@@ -1,0 +1,110 @@
+<div class="login-industrial-wrapper">
+  <!-- Patrón de fondo industrial -->
+  <div class="industrial-pattern"></div>
+  
+  <!-- Contenedor principal del login -->
+  <div class="login-container">
+    <div class="login-card">
+      
+      <!-- Header con logo -->
+      <div class="login-header">
+        <div class="logo-industrial">
+          <i class="fas fa-tools"></i>
+          <span class="logo-text">FERRETERÍA</span>
+        </div>
+        <h1 class="login-title">J&G</h1>
+        <div class="title-underline"></div>
+        <p class="login-subtitle">Sistema de Gestión Industrial</p>
+      </div>
+      
+      <!-- Formulario -->
+      <form (ngSubmit)="login()" class="login-form">
+        
+        <!-- Campo Usuario -->
+        <div class="form-group-industrial">
+          <label for="username" class="form-label-industrial">
+            <i class="fas fa-user"></i>
+            USUARIO
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="text" 
+              id="username" 
+              class="form-control-industrial" 
+              [(ngModel)]="username" 
+              name="username" 
+              required 
+              autofocus
+              placeholder="Ingrese su usuario">
+            <div class="input-border-effect"></div>
+          </div>
+        </div>
+        
+        <!-- Campo Contraseña -->
+        <div class="form-group-industrial">
+          <label for="password" class="form-label-industrial">
+            <i class="fas fa-lock"></i>
+            CONTRASEÑA
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="password" 
+              class="form-control-industrial" 
+              [(ngModel)]="password" 
+              name="password" 
+              required
+              placeholder="Ingrese su contraseña">
+            <div class="input-border-effect"></div>
+          </div>
+        </div>
+        
+        <!-- Mensaje de error -->
+        <div *ngIf="error" class="alert-industrial">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>{{ error }}</span>
+        </div>
+        
+        <!-- Botón de ingreso -->
+        <button 
+          type="submit" 
+          class="btn-industrial-primary" 
+          [disabled]="loading"
+          [class.loading]="loading">
+          <span *ngIf="!loading" class="btn-content">
+            <i class="fas fa-sign-in-alt"></i>
+            INGRESAR AL SISTEMA
+          </span>
+          <span *ngIf="loading" class="btn-loading">
+            <span class="spinner"></span>
+            PROCESANDO...
+          </span>
+        </button>
+        
+      </form>
+      
+      <!-- Footer del card -->
+      <div class="login-footer">
+        <div class="footer-divider"></div>
+        <p class="footer-text">
+          <i class="fas fa-shield-alt"></i>
+          Acceso seguro al sistema
+        </p>
+      </div>
+      
+    </div>
+    
+    <!-- Decoración lateral -->
+    <div class="side-decoration left">
+      <div class="deco-line"></div>
+      <div class="deco-dot"></div>
+      <div class="deco-line"></div>
+    </div>
+    <div class="side-decoration right">
+      <div class="deco-line"></div>
+      <div class="deco-dot"></div>
+      <div class="deco-line"></div>
+    </div>
+    
+  </div>
+</div>

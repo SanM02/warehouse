@@ -1,0 +1,406 @@
+<div class="container-fluid px-4">
+  <h2 class="mt-4 mb-4">
+    <i class="bi bi-receipt"></i> Facturación Mejorada
+  </h2>
+
+  <div class="row">
+    <!-- FORMULARIO DE FACTURACIÓN -->
+    <div class="col-lg-8">
+      <div class="card mb-4 shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="bi bi-person-plus"></i> Nueva Factura</h5>
+          <small class="text-light">
+            <i class="bi bi-cloud-check"></i> Guardado automático
+          </small>
+        </div>
+        <div class="card-body">
+          
+          <!-- DATOS DEL CLIENTE -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h6 class="text-primary border-bottom pb-2 mb-3">
+                <i class="bi bi-person"></i> Datos del Cliente
+              </h6>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label">Tipo de Documento:</label>
+              <select class="form-select" [(ngModel)]="nuevaFactura.tipo_documento" name="tipoDocumento" (ngModelChange)="onCampoModificado()">
+                <option value="cedula">Cédula</option>
+                <option value="ruc">RUC</option>
+                <option value="ninguno">Sin documento</option>
+              </select>
+            </div>
+            
+            <div class="col-md-6" *ngIf="nuevaFactura.tipo_documento !== 'ninguno'">
+              <label class="form-label">
+                {{ nuevaFactura.tipo_documento === 'ruc' ? 'RUC (con guión)' : 'Cédula' }}:
+              </label>
+              <div class="input-group">
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  [(ngModel)]="nuevaFactura.numero_documento" 
+                  name="numeroDocumento"
+                  [class.is-valid]="clienteEncontrado && validarDocumento() && nuevaFactura.numero_documento.length > 0"
+                  [class.is-invalid]="!validarDocumento() && nuevaFactura.numero_documento.length > 0 && !buscandoCliente"
+                  placeholder="{{ nuevaFactura.tipo_documento === 'ruc' ? '1234567-8' : 'Ingrese número de cédula' }}"
+                  (ngModelChange)="onCampoModificado()"
+                  (blur)="buscarClientePorDocumento(); onCampoModificado()"
+                  (keyup.enter)="buscarClientePorDocumento()">
+                <button 
+                  class="btn btn-outline-secondary" 
+                  type="button"
+                  (click)="buscarClientePorDocumento()"
+                  [disabled]="buscandoCliente">
+                  <i class="fas" [class.fa-search]="!buscandoCliente" [class.fa-spinner]="buscandoCliente" [class.fa-spin]="buscandoCliente"></i>
+                </button>
+              </div>
+              <div class="invalid-feedback d-block" *ngIf="!validarDocumento() && nuevaFactura.numero_documento.length > 0">
+                {{ nuevaFactura.tipo_documento === 'ruc' ? 'RUC debe tener formato con guión (-)' : 'Ingrese un número de cédula válido' }}
+              </div>
+              
+              <!-- Badges de estado del cliente -->
+              <div class="mt-2">
+                <span *ngIf="clienteEncontrado" class="badge bg-success me-2">
+                  <i class="fas fa-check-circle"></i> Cliente registrado
+                </span>
+                <span *ngIf="clienteEsNuevo && nuevaFactura.numero_documento" class="badge bg-warning text-dark">
+                  <i class="fas fa-exclamation-triangle"></i> Cliente nuevo
+                </span>
+              </div>
+              
+              <!-- Checkbox para guardar cliente nuevo -->
+              <div class="form-check mt-2" *ngIf="clienteEsNuevo && nuevaFactura.tipo_documento && (nuevaFactura.tipo_documento == 'cedula' || nuevaFactura.tipo_documento == 'ruc') && nuevaFactura.numero_documento">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  [(ngModel)]="guardarClienteAutomatico" 
+                  id="guardarClienteCheck"
+                  name="guardarClienteCheck">
+                <label class="form-check-label" for="guardarClienteCheck">
+                  <small>Guardar en base de datos al facturar</small>
+                </label>
+              </div>
+            </div>
+            
+            <div class="col-md-6 mt-3">
+              <label class="form-label">Nombre Completo / Razón Social:</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="nuevaFactura.nombre_cliente" 
+                name="nombreCliente"
+                [class.is-valid]="clienteEncontrado"
+                placeholder="Nombre del cliente"
+                (ngModelChange)="onCampoModificado()"
+                (blur)="onCampoModificado()">
+            </div>
+            
+            <div class="col-md-6 mt-3">
+              <label class="form-label">Email (Opcional):</label>
+              <input 
+                type="email" 
+                class="form-control" 
+                [(ngModel)]="nuevaFactura.email_cliente" 
+                name="emailCliente"
+                [class.is-valid]="clienteEncontrado && nuevaFactura.email_cliente"
+                placeholder="cliente@email.com"
+                (ngModelChange)="onCampoModificado()"
+                (blur)="onCampoModificado()">
+            </div>
+            
+            <div class="col-md-6 mt-3">
+              <label class="form-label">Teléfono (Opcional):</label>
+              <input 
+                type="tel" 
+                class="form-control" 
+                [(ngModel)]="nuevaFactura.telefono_cliente" 
+                name="telefonoCliente"
+                [class.is-valid]="clienteEncontrado && nuevaFactura.telefono_cliente"
+                placeholder="09xxxxxxxx"
+                (ngModelChange)="onCampoModificado()"
+                (blur)="onCampoModificado()">
+            </div>
+            
+            <div class="col-md-6 mt-3">
+              <label class="form-label">Dirección (Opcional):</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="nuevaFactura.direccion_cliente" 
+                name="direccionCliente"
+                [class.is-valid]="clienteEncontrado && nuevaFactura.direccion_cliente"
+                placeholder="Dirección del cliente"
+                (ngModelChange)="onCampoModificado()"
+                (blur)="onCampoModificado()">
+            </div>
+          </div>
+
+          <!-- SELECCIÓN DE PRODUCTOS -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h6 class="text-primary border-bottom pb-2 mb-3">
+                <i class="bi bi-box"></i> Agregar Productos
+              </h6>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label">Buscar Producto:</label>
+              <div class="position-relative">
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  [(ngModel)]="searchTerm" 
+                  name="searchTerm"
+                  (input)="searchSubject.next(searchTerm)"
+                  placeholder="Escriba para buscar productos..."
+                  autocomplete="off">
+                
+                <div *ngIf="loading" class="position-absolute top-50 end-0 translate-middle-y me-3">
+                  <div class="spinner-border spinner-border-sm"></div>
+                </div>
+
+                <!-- Lista de resultados -->
+                <div *ngIf="productosConStock.length > 0 && searchTerm.length > 0" 
+                     class="dropdown-menu show w-100 mt-1 shadow-lg" 
+                     style="max-height: 300px; overflow-y: auto; z-index: 1050;">
+                  <div *ngFor="let producto of productosConStock" 
+                       class="dropdown-item cursor-pointer"
+                       (click)="seleccionarProducto(producto)">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <strong>{{ producto.nombre }}</strong><br>
+                        <small class="text-muted">{{ producto.marca }} | Stock: {{ producto.stock_disponible }}</small>
+                      </div>
+                      <span class="badge bg-success">₲{{ producto.precio_unitario | number:'1.0-0' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-3">
+              <label class="form-label">Cantidad:</label>
+              <input 
+                type="number" 
+                class="form-control" 
+                [(ngModel)]="cantidadSeleccionada" 
+                name="cantidad"
+                min="1"
+                [max]="productoSeleccionado?.stock_disponible || 999">
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-end">
+              <button 
+                type="button" 
+                class="btn btn-success w-100"
+                (click)="agregarDetalle()"
+                [disabled]="!productoSeleccionado">
+                <i class="bi bi-plus-circle"></i> Agregar
+              </button>
+            </div>
+          </div>
+
+          <!-- PRODUCTO SELECCIONADO INFO -->
+          <div *ngIf="productoSeleccionado" class="alert alert-info">
+            <strong>{{ productoSeleccionado.nombre }}</strong> - 
+            Precio: ₲{{ productoSeleccionado.precio_unitario | number:'1.0-0' }} - 
+            Stock: {{ productoSeleccionado.stock_disponible }}
+          </div>
+
+          <!-- LISTA DE PRODUCTOS AGREGADOS -->
+          <div *ngIf="detalles.length > 0" class="row mb-4">
+            <div class="col-12">
+              <h6 class="text-primary border-bottom pb-2 mb-3">
+                <i class="bi bi-cart"></i> Productos en la Factura
+              </h6>
+              
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead class="table-dark">
+                    <tr>
+                      <th>Producto</th>
+                      <th>Cantidad</th>
+                      <th>Precio Unit.</th>
+                      <th>Subtotal</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let detalle of detalles; index as i">
+                      <td>
+                        <strong>{{ detalle.producto_nombre || getNombreProducto(detalle.producto) }}</strong>
+                        <br><small class="text-muted">Código: {{ detalle.codigo_producto || 'N/A' }}</small>
+                      </td>
+                      <td>{{ detalle.cantidad }}</td>
+                      <td>₲{{ detalle.precio_unitario | number:'1.0-0' }}</td>
+                      <td><strong>₲{{ detalle.subtotal | number:'1.0-0' }}</strong></td>
+                      <td>
+                        <button class="btn btn-sm btn-outline-primary me-2" (click)="editarDetalle(i)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" (click)="confirmarEliminarDetalle(i)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- OBSERVACIONES Y DESCUENTO -->
+          <div class="row mb-4">
+            <div class="col-md-8">
+              <label class="form-label">Observaciones (Opcional):</label>
+              <textarea 
+                class="form-control" 
+                [(ngModel)]="nuevaFactura.observaciones" 
+                name="observaciones"
+                rows="3"
+                placeholder="Observaciones adicionales..."
+                (ngModelChange)="onCampoModificado()"
+                (blur)="onCampoModificado()"></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Descuento Total:</label>
+              <div class="input-group">
+                <span class="input-group-text">₲</span>
+                <input 
+                  type="number" 
+                  class="form-control" 
+                  [(ngModel)]="nuevaFactura.descuento_total" 
+                  name="descuentoTotal"
+                  min="0"
+                  step="0.01"
+                  (input)="calcularTotales()"
+                  (ngModelChange)="onCampoModificado()"
+                  (blur)="onCampoModificado()">
+              </div>
+              
+              <!-- Checkbox Exonerar IVA -->
+              <div class="form-check mt-3">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  [(ngModel)]="nuevaFactura.exonerado_iva" 
+                  id="exoneradoIva"
+                  name="exoneradoIva"
+                  (change)="onExoneradoIvaChange()">
+                <label class="form-check-label" for="exoneradoIva">
+                  <i class="bi bi-shield-check"></i> Exonerar IVA
+                </label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- RESUMEN DE TOTALES -->
+    <div class="col-lg-4">
+      <div class="card mb-4 shadow">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0"><i class="bi bi-calculator"></i> Resumen de Factura</h5>
+        </div>
+        <div class="card-body">
+          
+          <!-- VALIDACIÓN DE DOCUMENTO -->
+          <div class="mb-3" *ngIf="nuevaFactura.numero_documento.length > 0">
+            <div class="alert" [class]="validarDocumento() ? 'alert-success' : 'alert-danger'">
+              <i class="bi" [class]="validarDocumento() ? 'bi-check-circle' : 'bi-exclamation-triangle'"></i>
+              {{ validarDocumento() ? 'Documento válido' : 'Documento inválido' }}
+            </div>
+          </div>
+
+          <!-- TOTALES -->
+          <div class="border rounded p-3 mb-3" style="background-color: #f8f9fa;">
+            <!-- Subtotal -->
+            <div class="d-flex justify-content-between mb-2">
+              <span>Subtotal:</span>
+              <strong>₲{{ getSubtotal() | number:'1.0-0' }}</strong>
+            </div>
+            
+            <!-- Descuento (solo si existe) -->
+            <div *ngIf="nuevaFactura.descuento_total > 0" 
+                 class="d-flex justify-content-between mb-2 text-danger">
+              <span>Descuento:</span>
+              <strong>-₲{{ nuevaFactura.descuento_total | number:'1.0-0' }}</strong>
+            </div>
+            
+            <!-- Base Imponible -->
+            <div class="d-flex justify-content-between mb-2">
+              <span>Base Imponible:</span>
+              <strong>₲{{ (getSubtotal() - (nuevaFactura.descuento_total || 0)) | number:'1.0-0' }}</strong>
+            </div>
+            
+            <!-- IVA 10% o Exonerado -->
+            <div class="d-flex justify-content-between mb-2" [class.text-info]="!nuevaFactura.exonerado_iva" [class.text-success]="nuevaFactura.exonerado_iva">
+              <span>
+                <i class="bi" [class.bi-info-circle]="!nuevaFactura.exonerado_iva" [class.bi-shield-check]="nuevaFactura.exonerado_iva"></i> 
+                {{ nuevaFactura.exonerado_iva ? 'IVA Exonerado' : 'IVA (10%)' }}:
+              </span>
+              <strong *ngIf="!nuevaFactura.exonerado_iva">₲{{ ((getSubtotal() - (nuevaFactura.descuento_total || 0)) * 0.10) | number:'1.0-0' }}</strong>
+              <strong *ngIf="nuevaFactura.exonerado_iva" class="text-success">₲0</strong>
+            </div>
+            
+            <hr>
+            
+            <!-- Total Final -->
+            <div class="d-flex justify-content-between">
+              <h5 class="mb-0">TOTAL A PAGAR:</h5>
+              <h4 class="text-success mb-0">
+                <strong>₲{{ getTotal() | number:'1.0-0' }}</strong>
+              </h4>
+            </div>
+          </div>
+
+          <!-- INFORMACIÓN ADICIONAL -->
+          <div class="mb-3">
+            <small class="text-muted">
+              <i class="bi bi-info-circle"></i> 
+              Productos: {{ detalles.length }} | 
+              Cantidad total: {{ getCantidadTotal() }}
+            </small>
+          </div>
+
+          <!-- BOTONES DE ACCIÓN -->
+          <div class="d-grid gap-2">
+            <button 
+              type="button" 
+              class="btn btn-success btn-lg"
+              (click)="crearFactura()"
+              [disabled]="loading || detalles.length === 0">
+              <i class="bi bi-receipt" *ngIf="!loading"></i>
+              <span class="spinner-border spinner-border-sm me-2" *ngIf="loading"></span>
+              {{ loading ? 'Procesando...' : 'Crear Factura' }}
+            </button>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <button 
+                  type="button" 
+                  class="btn btn-outline-secondary w-100"
+                  (click)="limpiarFormulario()">
+                  <i class="bi bi-arrow-clockwise"></i> Limpiar Todo
+                </button>
+              </div>
+              <div class="col-md-6">
+                <button 
+                  type="button" 
+                  class="btn btn-outline-warning w-100"
+                  (click)="limpiarBorrador()">
+                  <i class="bi bi-trash"></i> Limpiar Borrador
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

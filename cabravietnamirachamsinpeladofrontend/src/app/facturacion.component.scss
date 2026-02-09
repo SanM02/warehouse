@@ -1,0 +1,113 @@
+
+/* Puedes personalizar el estilo de la facturación aquí */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-pointer:hover {
+  background-color: var(--bs-gray-100);
+}
+
+.hover-bg-light:hover {
+  background-color: #f8f9fa !important;
+}
+
+.dropdown-item:hover {
+  background-color: #e9ecef;
+}
+
+.table-row-hover:hover {
+  background-color: #f8f9fa;
+}
+
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.search-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.product-card {
+  border-left: 4px solid #28a745;
+}
+
+.cart-empty {
+  color: #6c757d;
+}
+
+.total-amount {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #28a745;
+}
+
+.btn-floating {
+  transition: all 0.3s ease;
+}
+
+.btn-floating:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+form {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+
+form {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.card {
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.table th, .table td {
+  vertical-align: middle;
+}
+
+.btn-outline-danger.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.95rem;
+}
+
+.spinner-border {
+  vertical-align: middle;
+}
+
+.card {
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.table th, .table td {
+  vertical-align: middle;
+}
+
+.btn-outline-danger.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.95rem;
+}
+
+.spinner-border {
+  vertical-align: middle;
+}

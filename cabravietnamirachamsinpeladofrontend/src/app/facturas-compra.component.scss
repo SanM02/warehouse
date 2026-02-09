@@ -1,0 +1,123 @@
+.modal.show {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.table-responsive {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.btn-group {
+  .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+}
+
+.card-body {
+  h6 {
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.9;
+  }
+
+  h3 {
+    margin-bottom: 0.25rem;
+  }
+
+  small {
+    font-size: 0.75rem;
+    opacity: 0.85;
+  }
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+.form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.pagination {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+
+  .page-link {
+    cursor: pointer;
+  }
+
+  .page-item.disabled .page-link {
+    cursor: not-allowed;
+  }
+}
+
+// Estilos para el modal
+.modal-xl {
+  max-width: 95%;
+}
+
+.modal-body {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+// Estilos para la tabla de detalles en el modal
+.table-sm {
+  font-size: 0.875rem;
+
+  th, td {
+    vertical-align: middle;
+    padding: 0.5rem;
+  }
+
+  input, select {
+    font-size: 0.875rem;
+  }
+}
+
+// Animación del modal
+.modal.show {
+  animation: fadeIn 0.3s;
+}
+
+.modal-backdrop.show {
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Estilos responsive
+@media (max-width: 768px) {
+  .modal-xl {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .table-responsive {
+    font-size: 0.8rem;
+  }
+
+  .btn-group {
+    flex-direction: column;
+
+    .btn {
+      border-radius: 0.25rem !important;
+      margin-bottom: 0.25rem;
+    }
+  }
+}

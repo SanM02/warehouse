@@ -1,0 +1,281 @@
+<div class="container-fluid px-4">
+  <h1 class="mt-4">Analytics Avanzado</h1>
+  <ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a href="#" (click)="$event.preventDefault()">Dashboard</a></li>
+    <li class="breadcrumb-item active">Analytics</li>
+  </ol>
+
+  <!-- Controles y filtros -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Filtros</h5>
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label">Período:</label>
+              <select [(ngModel)]="periodoSeleccionado" (change)="cambiarPeriodo()" class="form-select">
+                <option value="7dias">Últimos 7 días</option>
+                <option value="30dias">Últimos 30 días</option>
+                <option value="90dias">Últimos 3 meses</option>
+                <option value="año">Último año</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Tipo de Gráfico:</label>
+              <select [(ngModel)]="tipoGrafico" (change)="cambiarTipoGrafico()" class="form-select">
+                <option value="line">Línea</option>
+                <option value="bar">Barras</option>
+                <option value="area">Área</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Acciones</h5>
+          <button class="btn btn-primary me-2" (click)="exportarDatos()">
+            <i class="fas fa-download me-1"></i>
+            Exportar Datos
+          </button>
+          <button class="btn btn-secondary" (click)="cargarDatos()">
+            <i class="fas fa-sync-alt me-1"></i>
+            Actualizar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico principal de ventas detallado -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <i class="fas fa-chart-line me-1"></i>
+          Análisis Detallado de Ventas
+        </div>
+        <div class="card-body">
+          <canvas #ventasDetalladoChart style="height: 400px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráficos de comparación -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <i class="fas fa-chart-area me-1"></i>
+          Comparación de Marcas
+        </div>
+        <div class="card-body">
+          <canvas #comparacionMarcasChart style="height: 350px;"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <i class="fas fa-chart-pie me-1"></i>
+          Tendencia de Clientes
+        </div>
+        <div class="card-body">
+          <canvas #tendenciaClientesChart style="height: 350px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Análisis detallado por productos -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <i class="fas fa-list me-1"></i>
+          Análisis Detallado de Productos
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th>Ranking</th>
+                  <th>Producto</th>
+                  <th>Marca</th>
+                  <th>Cantidad Vendida</th>
+                  <th>Ingresos Totales</th>
+                  <th>Promedio por Venta</th>
+                  <th>% del Total</th>
+                  <th>Tendencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let producto of productos; let i = index">
+                  <td>
+                    <span class="badge" 
+                          [class.bg-warning]="i === 0"
+                          [class.bg-secondary]="i === 1"
+                          [class.bg-success]="i === 2"
+                          [class.bg-info]="i > 2">
+                      #{{ i + 1 }}
+                    </span>
+                  </td>
+                  <td><strong>{{ producto.nombre }}</strong></td>
+                  <td>{{ producto.marca }}</td>
+                  <td>{{ producto.cantidad_vendida }}</td>
+                  <td>{{ producto.ingresos_totales | number:'1.0-0' }}</td>
+                  <td>{{ (producto.ingresos_totales / producto.cantidad_vendida) | number:'1.0-0' }}</td>
+                  <td>{{ (producto.ingresos_totales / getTotalIngresos() * 100).toFixed(1) }}%</td>
+                  <td>
+                    <i class="fas fa-arrow-up text-success" *ngIf="i < 2"></i>
+                    <i class="fas fa-arrow-down text-danger" *ngIf="i >= 2"></i>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Análisis de clientes -->
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <i class="fas fa-users me-1"></i>
+          Perfil de Clientes Frecuentes
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Total Compras</th>
+                  <th>Total Gastado</th>
+                  <th>Promedio por Compra</th>
+                  <th>Última Compra</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let cliente of clientes">
+                  <td><strong>{{ cliente.nombre }}</strong></td>
+                  <td>{{ cliente.total_compras }}</td>
+                  <td>{{ cliente.total_gastado | number:'1.0-0' }}</td>
+                  <td>{{ (cliente.total_gastado / cliente.total_compras) | number:'1.0-0' }}</td>
+                  <td>{{ cliente.ultima_compra | date:'dd/MM/yyyy' }}</td>
+                  <td>
+                    <span class="badge" 
+                          [class.bg-success]="cliente.total_gastado > 2000"
+                          [class.bg-warning]="cliente.total_gastado > 1000 && cliente.total_gastado <= 2000"
+                          [class.bg-secondary]="cliente.total_gastado <= 1000">
+                      {{ cliente.total_gastado > 2000 ? 'VIP' : cliente.total_gastado > 1000 ? 'Premium' : 'Regular' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <i class="fas fa-trophy me-1"></i>
+          Rankings
+        </div>
+        <div class="card-body">
+          <h6>🏆 Marca Más Popular</h6>
+          <p class="text-primary">{{ marcas[0]?.marca || 'N/A' }}</p>
+          
+          <h6>💰 Cliente VIP</h6>
+          <p class="text-success">{{ clientes[0]?.nombre || 'N/A' }}</p>
+          
+          <h6>📦 Producto Estrella</h6>
+          <p class="text-warning">{{ productos[0]?.nombre || 'N/A' }}</p>
+          
+          <h6>📈 Crecimiento</h6>
+          <p class="text-info">+15.5% este mes</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resumen de marcas con métricas avanzadas -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <i class="fas fa-tags me-1"></i>
+          Análisis Avanzado de Marcas
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-8">
+              <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                  <thead class="table-dark">
+                    <tr>
+                      <th>Marca</th>
+                      <th>Productos Vendidos</th>
+                      <th>Ingresos</th>
+                      <th>Ticket Promedio</th>
+                      <th>Market Share</th>
+                      <th>ROI</th>
+                      <th>Performance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let marca of marcas">
+                      <td><strong>{{ marca.marca }}</strong></td>
+                      <td>{{ marca.productos_vendidos }}</td>
+                      <td>{{ marca.ingresos_totales | number:'1.0-0' }}</td>
+                      <td>{{ (marca.ingresos_totales / marca.productos_vendidos) | number:'1.0-0' }}</td>
+                      <td>{{ (marca.productos_vendidos / getTotalProductosVendidos() * 100).toFixed(1) }}%</td>
+                      <td>
+                        <span class="text-success">+{{ (Math.random() * 20 + 5).toFixed(1) }}%</span>
+                      </td>
+                      <td>
+                        <div class="progress" style="height: 20px;">
+                          <div class="progress-bar" 
+                               [class.bg-success]="marca.ingresos_totales > 8000"
+                               [class.bg-warning]="marca.ingresos_totales > 5000 && marca.ingresos_totales <= 8000"
+                               [class.bg-secondary]="marca.ingresos_totales <= 5000"
+                               [style.width.%]="marca.ingresos_totales / getTotalIngresosMarcas() * 100">
+                            {{ (marca.ingresos_totales / getTotalIngresosMarcas() * 100).toFixed(0) }}%
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card bg-light">
+                <div class="card-body">
+                  <h6>📊 Insights Clave</h6>
+                  <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success me-2"></i>Stanley lidera en volumen</li>
+                    <li><i class="fas fa-check text-success me-2"></i>DeWalt tiene mejor ticket promedio</li>
+                    <li><i class="fas fa-exclamation text-warning me-2"></i>Oportunidad en Bosch</li>
+                    <li><i class="fas fa-trending-up text-info me-2"></i>Black&Decker crece rápido</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

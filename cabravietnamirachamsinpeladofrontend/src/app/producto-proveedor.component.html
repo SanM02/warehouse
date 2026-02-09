@@ -1,0 +1,500 @@
+<div class="container-fluid">
+  <!-- Encabezado -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2 class="h3 mb-3">
+        <i class="fas fa-link text-info me-2"></i>
+        Gestión Producto-Proveedor
+      </h2>
+      <p class="text-muted">Administra la relación entre productos y sus proveedores, precios y tiempos de entrega</p>
+    </div>
+  </div>
+
+  <!-- Controles de Vista -->
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <div class="btn-group" role="group">
+        <button type="button" 
+                class="btn" 
+                [class]="vistaAgrupada ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="vistaAgrupada = true; cargarDatos()">
+          <i class="fas fa-boxes me-2"></i>Por Producto
+        </button>
+        <button type="button" 
+                class="btn" 
+                [class]="!vistaAgrupada ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="vistaAgrupada = false; cargarDatos()">
+          <i class="fas fa-list me-2"></i>Lista Completa
+        </button>
+      </div>
+    </div>
+    <div class="col-md-6 text-end">
+      <button type="button" class="btn btn-secondary me-2" (click)="cargarProductos()">
+        <i class="fas fa-sync me-2"></i>Recargar Productos
+      </button>
+      <button type="button" class="btn btn-success me-2" (click)="abrirModalNueva()">
+        <i class="fas fa-plus me-2"></i>Nueva Relación
+      </button>
+      <button type="button" class="btn btn-info" (click)="abrirModalMasivo()">
+        <i class="fas fa-users me-2"></i>Asignación Masiva
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros (solo para vista de lista) -->
+  <div class="card mb-4" *ngIf="!vistaAgrupada">
+    <div class="card-header">
+      <h5 class="card-title mb-0">Filtros de Búsqueda</h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Producto:</label>
+          <select class="form-select" [(ngModel)]="filtroProducto">
+            <option [value]="null">Todos los productos</option>
+            <option *ngFor="let producto of productos" [value]="producto.id">
+              {{ producto.nombre }}
+            </option>
+          </select>
+        </div>
+        
+        <div class="col-md-3">
+          <label class="form-label">Proveedor:</label>
+          <select class="form-select" [(ngModel)]="filtroProveedor">
+            <option [value]="null">Todos los proveedores</option>
+            <option *ngFor="let proveedor of proveedores" [value]="proveedor.id">
+              {{ proveedor.nombre }}
+            </option>
+          </select>
+        </div>
+        
+        <div class="col-md-2">
+          <label class="form-label">Principal:</label>
+          <select class="form-select" [(ngModel)]="filtroEsPrincipal">
+            <option value="">Todos</option>
+            <option value="true">Solo principales</option>
+            <option value="false">No principales</option>
+          </select>
+        </div>
+        
+        <div class="col-md-2">
+          <label class="form-label">Estado:</label>
+          <select class="form-select" [(ngModel)]="filtroActivo">
+            <option value="">Todos</option>
+            <option value="true">Activo</option>
+            <option value="false">Inactivo</option>
+          </select>
+        </div>
+        
+        <div class="col-md-2 d-flex align-items-end">
+          <div class="btn-group w-100">
+            <button type="button" class="btn btn-primary" (click)="aplicarFiltros()">
+              <i class="fas fa-search"></i> Buscar
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="limpiarFiltros()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista Agrupada por Producto -->
+  <div *ngIf="vistaAgrupada" class="row">
+    <div class="col-12" *ngIf="cargando">
+      <div class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2 mb-0">Cargando productos y proveedores...</p>
+      </div>
+    </div>
+
+    <div class="col-12" *ngIf="!cargando && productosConProveedores.length === 0">
+      <div class="alert alert-warning text-center">
+        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+        <h5>No se encontraron productos</h5>
+        <p class="mb-3">No hay productos disponibles para gestionar. Verifica que:</p>
+        <ul class="list-unstyled">
+          <li>• El servidor backend esté ejecutándose en http://localhost:8000</li>
+          <li>• Tengas productos registrados en la base de datos</li>
+          <li>• La conexión de red esté funcionando</li>
+        </ul>
+        <button type="button" class="btn btn-primary me-2" (click)="cargarDatos()">
+          <i class="fas fa-sync me-2"></i>Reintentar
+        </button>
+        <button type="button" class="btn btn-info" (click)="diagnosticarConexion()">
+          <i class="fas fa-stethoscope me-2"></i>Diagnosticar
+        </button>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-6 mb-4" *ngFor="let producto of productosConProveedores; trackBy: trackByProducto">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="card-title mb-0">
+            <i class="fas fa-box text-primary me-2"></i>
+            {{ producto.nombre }}
+          </h6>
+          <span class="badge bg-info">{{ producto.total_proveedores }} proveedores</span>
+        </div>
+        <div class="card-body">
+          <!-- Información del producto -->
+          <div class="row mb-3">
+            <div class="col-6">
+              <small class="text-muted">Stock:</small>
+              <p class="mb-1"><strong>{{ producto.stock_actual }}</strong></p>
+            </div>
+            <div class="col-6">
+              <small class="text-muted">Precio Venta:</small>
+              <p class="mb-1"><strong>{{ producto.precio_unitario | currency:'USD':'symbol':'1.2-2' }}</strong></p>
+            </div>
+          </div>
+
+          <!-- Proveedor Principal -->
+          <div class="mb-3" *ngIf="producto.proveedor_principal">
+            <div class="alert alert-success py-2">
+              <strong><i class="fas fa-star me-1"></i>Proveedor Principal:</strong><br>
+              {{ producto.proveedor_principal.proveedor_nombre }}<br>
+              <small>Precio: {{ producto.proveedor_principal.precio_compra | currency:'USD':'symbol':'1.2-2' }}</small>
+            </div>
+          </div>
+
+          <!-- Lista de Proveedores -->
+          <div *ngIf="producto.proveedores.length > 0">
+            <h6 class="text-muted mb-2">Proveedores:</h6>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <tbody>
+                  <tr *ngFor="let relacion of producto.proveedores">
+                    <td>
+                      <strong>{{ relacion.proveedor_nombre }}</strong>
+                      <span class="badge bg-warning ms-1" *ngIf="relacion.es_principal">Principal</span>
+                    </td>
+                    <td class="text-end">{{ relacion.precio_compra | currency:'USD':'symbol':'1.2-2' }}</td>
+                    <td class="text-center">
+                      <div class="btn-group btn-group-sm">
+                        <button type="button" 
+                                class="btn btn-outline-primary" 
+                                (click)="abrirModalEdicion(relacion)"
+                                title="Editar">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" 
+                                class="btn btn-outline-success" 
+                                *ngIf="!relacion.es_principal"
+                                (click)="establecerComoPrincipal(relacion)"
+                                title="Establecer como Principal">
+                          <i class="fas fa-star"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Sin proveedores -->
+          <div *ngIf="producto.total_proveedores === 0" class="alert alert-warning py-2">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Sin proveedores asignados
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista de Lista Completa -->
+  <div class="card" *ngIf="!vistaAgrupada">
+    <div class="card-header">
+      <h5 class="card-title mb-0">
+        Lista de Relaciones ({{ totalRelaciones }} total)
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>Producto</th>
+              <th>Proveedor</th>
+              <th class="text-end">Precio Compra</th>
+              <th class="text-center">Principal</th>
+              <th class="text-center">Entrega (días)</th>
+              <th class="text-center">Estado</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="cargando">
+              <td colspan="7" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2 mb-0">Cargando relaciones...</p>
+              </td>
+            </tr>
+            
+            <tr *ngIf="!cargando && relaciones.length === 0">
+              <td colspan="7" class="text-center py-4">
+                <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                <p class="mb-0 text-muted">No hay relaciones registradas</p>
+              </td>
+            </tr>
+            
+            <tr *ngFor="let relacion of relaciones; trackBy: trackByRelacion" class="align-middle">
+              <td>
+                <strong>{{ relacion.producto_nombre || obtenerNombreProducto(relacion.producto) }}</strong>
+              </td>
+              <td>{{ relacion.proveedor_nombre || obtenerNombreProveedor(relacion.proveedor) }}</td>
+              <td class="text-end">
+                <strong>{{ relacion.precio_compra | currency:'USD':'symbol':'1.2-2' }}</strong>
+              </td>
+              <td class="text-center">
+                <span class="badge" [class]="relacion.es_principal ? 'bg-success' : 'bg-secondary'">
+                  {{ relacion.es_principal ? 'Principal' : 'Secundario' }}
+                </span>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-info">{{ relacion.tiempo_entrega_dias }} días</span>
+              </td>
+              <td class="text-center">
+                <span class="badge" [class]="relacion.activo ? 'bg-success' : 'bg-danger'">
+                  {{ relacion.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm">
+                  <button type="button" 
+                          class="btn btn-outline-primary" 
+                          (click)="abrirModalEdicion(relacion)"
+                          title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  
+                  <button type="button" 
+                          class="btn btn-outline-success" 
+                          *ngIf="!relacion.es_principal"
+                          (click)="establecerComoPrincipal(relacion)"
+                          title="Establecer como Principal">
+                    <i class="fas fa-star"></i>
+                  </button>
+                  
+                  <button type="button" 
+                          class="btn btn-outline-danger" 
+                          (click)="eliminarRelacion(relacion)"
+                          title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nueva/Editar Relación -->
+<div class="modal fade" 
+     [class.show]="mostrarModal" 
+     [style.display]="mostrarModal ? 'block' : 'none'"
+     tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-link me-2"></i>
+          {{ esEdicion ? 'Editar' : 'Nueva' }} Relación Producto-Proveedor
+        </h5>
+        <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+      </div>
+      
+      <div class="modal-body">
+        <form>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Producto <span class="text-danger">*</span></label>
+              <select class="form-select" 
+                      [(ngModel)]="nuevaRelacion.producto" 
+                      name="producto" 
+                      [disabled]="esEdicion"
+                      required>
+                <option value="0">Seleccionar producto...</option>
+                <option value="0" *ngIf="productos.length === 0" disabled>No hay productos disponibles</option>
+                <option *ngFor="let producto of productos" [value]="producto.id">
+                  {{ producto.nombre }}
+                </option>
+              </select>
+              <small class="form-text text-muted" *ngIf="productos.length === 0">
+                No se encontraron productos. Verifica la conexión al servidor.
+              </small>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label">Proveedor <span class="text-danger">*</span></label>
+              <select class="form-select" 
+                      [(ngModel)]="nuevaRelacion.proveedor" 
+                      name="proveedor" 
+                      [disabled]="esEdicion"
+                      required>
+                <option value="0">Seleccionar proveedor...</option>
+                <option *ngFor="let proveedor of proveedores" [value]="proveedor.id">
+                  {{ proveedor.nombre }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Precio de Compra <span class="text-danger">*</span></label>
+              <input type="number" 
+                     class="form-control" 
+                     [(ngModel)]="nuevaRelacion.precio_compra" 
+                     name="precioCompra"
+                     step="0.01"
+                     min="0"
+                     required>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label">Tiempo de Entrega (días)</label>
+              <input type="number" 
+                     class="form-control" 
+                     [(ngModel)]="nuevaRelacion.tiempo_entrega_dias" 
+                     name="tiempoEntrega"
+                     min="1"
+                     required>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <div class="form-check">
+                <input class="form-check-input" 
+                       type="checkbox" 
+                       [(ngModel)]="nuevaRelacion.es_principal" 
+                       name="esPrincipal"
+                       id="esPrincipal">
+                <label class="form-check-label" for="esPrincipal">
+                  Proveedor Principal
+                </label>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-check">
+                <input class="form-check-input" 
+                       type="checkbox" 
+                       [(ngModel)]="nuevaRelacion.activo" 
+                       name="activo"
+                       id="activo">
+                <label class="form-check-label" for="activo">
+                  Relación Activa
+                </label>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cerrarModal()">
+          Cancelar
+        </button>
+        <button type="button" 
+                class="btn btn-success" 
+                (click)="guardarRelacion()"
+                [disabled]="cargando">
+          <span *ngIf="cargando" class="spinner-border spinner-border-sm me-2"></span>
+          {{ esEdicion ? 'Actualizar' : 'Crear' }} Relación
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Asignación Masiva -->
+<div class="modal fade" 
+     [class.show]="mostrarModalMasivo" 
+     [style.display]="mostrarModalMasivo ? 'block' : 'none'"
+     tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-users me-2"></i>
+          Asignación Masiva de Proveedores
+        </h5>
+        <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="row mb-4">
+          <div class="col-12">
+            <label class="form-label">Producto <span class="text-danger">*</span></label>
+            <select class="form-select" [(ngModel)]="productoSeleccionadoMasivo" name="productoMasivo">
+              <option value="0">Seleccionar producto...</option>
+              <option value="0" *ngIf="productos.length === 0" disabled>No hay productos disponibles</option>
+              <option *ngFor="let producto of productos" [value]="producto.id">
+                {{ producto.nombre }}
+              </option>
+            </select>
+            <small class="form-text text-muted" *ngIf="productos.length === 0">
+              <i class="fas fa-exclamation-triangle me-1"></i>
+              No se encontraron productos. Verifica la conexión al servidor.
+            </small>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-12">
+            <label class="form-label">Proveedores a Asignar:</label>
+            <div class="row">
+              <div class="col-md-6 mb-2" *ngFor="let proveedor of proveedores">
+                <div class="form-check">
+                  <input class="form-check-input" 
+                         type="checkbox" 
+                         [checked]="proveedor.id ? proveedoresSeleccionados.includes(proveedor.id) : false"
+                         (change)="proveedor.id && toggleProveedorSeleccionado(proveedor.id)"
+                         [id]="'proveedor_' + proveedor.id">
+                  <label class="form-check-label" [for]="'proveedor_' + proveedor.id">
+                    {{ proveedor.nombre }}
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="alert alert-info mt-3">
+          <i class="fas fa-info-circle me-2"></i>
+          <strong>Nota:</strong> El primer proveedor seleccionado se establecerá como principal.
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cerrarModal()">
+          Cancelar
+        </button>
+        <button type="button" 
+                class="btn btn-success" 
+                (click)="asignarProveedoresMasivo()"
+                [disabled]="cargando || !productoSeleccionadoMasivo || proveedoresSeleccionados.length === 0">
+          <span *ngIf="cargando" class="spinner-border spinner-border-sm me-2"></span>
+          Asignar {{ proveedoresSeleccionados.length }} Proveedores
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Backdrop del modal -->
+<div class="modal-backdrop fade" 
+     [class.show]="mostrarModal || mostrarModalMasivo" 
+     *ngIf="mostrarModal || mostrarModalMasivo"
+     (click)="cerrarModal()"></div>
