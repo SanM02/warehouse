@@ -1,0 +1,190 @@
+================================================================================
+PLAN DE REBRANDING - FERRETERIA J&G
+================================================================================
+Para: Claude Sonnet 4.5 (Programador)
+De: Arquitecto Opus
+Fecha: 13 de diciembre de 2025
+================================================================================
+
+TAREA 1: DOMINIO PERSONALIZADO (ferreteria-jg.local)
+================================================================================
+
+1.1 Archivo hosts de Windows (MANUAL POR EL USUARIO)
+----------------------------------------------------
+Ubicacion: C:\Windows\System32\drivers\etc\hosts
+Agregar linea al final: 
+127.0.0.1    ferreteria-jg.local
+
+Instrucciones para el usuario:
+- Abrir Bloc de Notas como ADMINISTRADOR
+- Archivo > Abrir > C:\Windows\System32\drivers\etc\hosts
+- Agregar la linea al final
+- Guardar
+
+
+1.2 Archivo: .env
+-----------------
+Ubicacion: c:\Users\San\Desktop\SistemaJadi\.env
+
+LINEA ACTUAL (14):
+ALLOWED_HOSTS=localhost,127.0.0.1,ferreteria-backend
+
+CAMBIAR A:
+ALLOWED_HOSTS=localhost,127.0.0.1,ferreteria-backend,ferreteria-jg.local,ferreteria-api
+
+
+1.3 Archivo: nginx.conf
+-----------------------
+Ubicacion: cabravietnamirachamsinpeladofrontend/nginx.conf
+
+LINEA ACTUAL (28):
+server_name localhost;
+
+CAMBIAR A:
+server_name localhost ferreteria-jg.local;
+
+
+================================================================================
+
+TAREA 2: CAMBIO DE FAVICON
+================================================================================
+
+2.1 Reemplazar imagen del favicon
+----------------------------------
+Ubicacion: cabravietnamirachamsinpeladofrontend/src/assets/favicon.png
+
+Accion: El cliente debe proporcionar su logo
+Formato: PNG o ICO
+Tamano recomendado: 32x32 o 64x64 pixeles
+Nombre del archivo: favicon.png (reemplazar el existente)
+
+
+2.2 Archivo: index.html - Agregar tag de favicon
+------------------------------------------------
+Ubicacion: cabravietnamirachamsinpeladofrontend/src/index.html
+
+DESPUES DE LA LINEA 10 (despues del </title>), AGREGAR:
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+
+El resultado debe verse asi:
+    <title>Ferreteria J&G - Sistema de Gestion</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+
+
+================================================================================
+
+TAREA 3: CAMBIO DE TEXTOS (BRANDING)
+================================================================================
+
+3.1 Titulo de pestana del navegador
+-----------------------------------
+Archivo: cabravietnamirachamsinpeladofrontend/src/index.html
+
+LINEA ACTUAL (10):
+<title>Dashboard - SB Admin</title>
+
+CAMBIAR A:
+<title>Ferreteria J&G - Sistema de Gestion</title>
+
+
+3.2 Nombre en barra de navegacion
+---------------------------------
+Archivo: cabravietnamirachamsinpeladofrontend/src/app/app.component.html
+
+LINEA ACTUAL (3):
+<a class="navbar-brand ps-3" (click)="goToDashboard()" style="cursor:pointer;">Front Ferre</a>
+
+CAMBIAR A:
+<a class="navbar-brand ps-3" (click)="goToDashboard()" style="cursor:pointer;">Ferreteria J&G</a>
+
+
+================================================================================
+
+RESUMEN DE CAMBIOS
+================================================================================
+
+| Archivo              | Linea      | Cambio                                    |
+|----------------------|------------|-------------------------------------------|
+| .env                 | 14         | Agregar ferreteria-jg.local a ALLOWED_HOSTS |
+| nginx.conf           | 28         | Agregar ferreteria-jg.local a server_name |
+| index.html           | 10         | Titulo -> "Ferreteria J&G - Sistema de Gestion" |
+| index.html           | despues 10 | Agregar tag <link rel="icon">             |
+| app.component.html   | 3          | "Front Ferre" -> "Ferreteria J&G"         |
+| assets/favicon.png   | -          | Reemplazar con logo del cliente           |
+
+
+================================================================================
+
+ORDEN DE EJECUCION
+================================================================================
+
+1. Editar archivo .env (agregar dominio a ALLOWED_HOSTS)
+2. Editar nginx.conf (agregar dominio a server_name)
+3. Editar index.html (titulo + tag favicon)
+4. Editar app.component.html (nombre en navbar)
+5. Reemplazar favicon.png (si el cliente lo proporciona)
+6. Reconstruir frontend:
+   
+   docker-compose up -d --build frontend
+
+7. El usuario debe editar hosts de Windows (requiere admin)
+8. Probar acceso en: http://ferreteria-jg.local
+
+
+================================================================================
+
+INSTRUCCIONES PARA EL CLIENTE (ARCHIVO HOSTS)
+================================================================================
+
+CONFIGURAR DOMINIO PERSONALIZADO EN WINDOWS:
+
+1. Abrir Bloc de Notas como ADMINISTRADOR
+   (Click derecho en Bloc de Notas -> Ejecutar como administrador)
+
+2. Ir a Archivo > Abrir
+
+3. En la barra de direccion escribir:
+   C:\Windows\System32\drivers\etc
+
+4. Cambiar "Documentos de texto" a "Todos los archivos"
+
+5. Seleccionar el archivo "hosts" (sin extension)
+
+6. Agregar al final del archivo:
+   127.0.0.1    ferreteria-jg.local
+
+7. Guardar (Ctrl + S) y cerrar
+
+8. Abrir navegador y acceder a:
+   http://ferreteria-jg.local
+
+NOTA: Esto solo funciona en ESTA computadora.
+Para otras PCs de la red, repetir el proceso en cada una.
+
+
+================================================================================
+
+NOTAS IMPORTANTES
+================================================================================
+
+1. FAVICON: El cliente debe proporcionar su logo. Si no tiene, puede crear
+   uno gratis en: https://favicon.io
+
+2. DOMINIO .LOCAL: Solo funciona en la PC donde se configure el archivo hosts.
+   Es una solucion local, no un dominio de internet.
+
+3. REBUILD OBLIGATORIO: Despues de los cambios, ejecutar:
+   docker-compose up -d --build frontend
+
+4. BACKEND NO SE TOCA: Solo necesita el ALLOWED_HOSTS actualizado via .env,
+   y se aplicara al reiniciar el contenedor.
+
+5. VERIFICAR: Despues de aplicar cambios, probar:
+   - http://localhost (debe seguir funcionando)
+   - http://ferreteria-jg.local (nuevo acceso)
+   - http://localhost:4200 (alternativo)
+
+
+================================================================================
+FIN DEL PLAN
+================================================================================

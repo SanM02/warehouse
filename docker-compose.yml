@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # POSTGRESQL 15 - Base de Datos
+  # ==========================================
+  db:
+    image: postgres:15-alpine
+    container_name: ferreteria-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-ferreteria_inventario}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-default_secure_password_123}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+      - ./scripts/docker/init-db.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-ferreteria_inventario}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    command: 
+      - "postgres"
+      - "-c"
+      - "log_connections=on"
+      - "-c"
+      - "log_disconnections=on"
+    networks:
+      - ferreteria-network
+
+  # ==========================================
+  # BACKEND - Django + Gunicorn
+  # ==========================================
+  backend:
+    build: ./cabravietnamirachamsinpeladobackend
+    image: ferreteria-backend:latest
+    container_name: ferreteria-api
+    restart: always
+    environment:
+      # Base de datos (con defaults robustos)
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ferreteria_inventario}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-default_secure_password_123}
+      
+      # Django (con defaults seguros)
+      SECRET_KEY: ${SECRET_KEY:-django-fallback-key-change-in-production}
+      DEBUG: ${DEBUG:-False}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,ferreteria-api}
+      
+      # JWT (con defaults)
+      JWT_ACCESS_TOKEN_LIFETIME_HOURS: ${JWT_ACCESS_TOKEN_LIFETIME_HOURS:-8}
+      JWT_REFRESH_TOKEN_LIFETIME_DAYS: ${JWT_REFRESH_TOKEN_LIFETIME_DAYS:-7}
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend_static:/app/staticfiles
+      - backend_media:/app/mediafiles
+      - backend_logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    networks:
+      - ferreteria-network
+
+  # ==========================================
+  # FRONTEND - Nginx + Angular
+  # ==========================================
+  frontend:
+    build: ./cabravietnamirachamsinpeladofrontend
+    image: ferreteria-frontend:latest
+    container_name: ferreteria-web
+    restart: always
+    ports:
+      - "80:80"
+      - "4200:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - ferreteria-network
+
+# ==========================================
+# VOLÚMENES NOMBRADOS PERSISTENTES
+# ==========================================
+volumes:
+  postgres_data:
+    name: ferreteria_postgres_data
+  backend_static:
+    name: ferreteria_backend_static
+  backend_media:
+    name: ferreteria_backend_media
+  backend_logs:
+    name: ferreteria_backend_logs
+
+# ==========================================
+# RED INTERNA
+# ==========================================
+networks:
+  ferreteria-network:
+    driver: bridge
+    name: ferreteria-network

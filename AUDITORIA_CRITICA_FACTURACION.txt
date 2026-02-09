@@ -1,0 +1,488 @@
+================================================================================
+         AUDITORÍA CRÍTICA - SISTEMA DE FACTURACIÓN FERRETERÍA J&G
+                    DOCUMENTO TÉCNICO PARA PROGRAMADOR
+================================================================================
+                    Fecha: Enero 2025
+                    Prioridad: CRÍTICA - PÉRDIDA DE DATOS
+================================================================================
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    🚨 BUG #1: DOBLE RESTA DE STOCK (CRÍTICO)                 ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+DESCRIPCIÓN DEL PROBLEMA:
+-------------------------
+Cuando se crea una factura, el stock se resta DOS VECES del producto, causando
+que el inventario muestre cantidades incorrectas (negativas o muy bajas).
+
+ARCHIVOS AFECTADOS:
+-------------------
+1. cabravietnamirachamsinpeladobackend/inventario/serializers.py (líneas 117-140)
+2. cabravietnamirachamsinpeladobackend/inventario/signals.py (líneas 6-13)
+
+ANÁLISIS TÉCNICO:
+-----------------
+El código tiene dos puntos donde se resta el stock:
+
+📄 PUNTO 1 - serializers.py (líneas 117-118):
+```python
+# Actualizar stock
+producto.stock_disponible -= cantidad
+producto.save()
+```
+
+📄 PUNTO 2 - signals.py (líneas 6-13):
+```python
+@receiver(post_save, sender=Movimiento)
+def actualizar_stock(sender, instance, created, **kwargs):
+    if created:
+        producto = instance.producto
+        if instance.tipo == 'entrada':
+            producto.stock_disponible += instance.cantidad
+        elif instance.tipo == 'salida':
+            producto.stock_disponible -= instance.cantidad  # <-- SEGUNDA RESTA
+        producto.save()
+```
+
+FLUJO DEL BUG:
+--------------
+1. Usuario crea factura con producto X, cantidad 5
+2. serializers.py línea 117: stock_disponible = 100 - 5 = 95 ✓
+3. serializers.py línea 133: Crea Movimiento tipo='salida'
+4. signals.py se dispara automáticamente (post_save)
+5. signals.py línea 12: stock_disponible = 95 - 5 = 90 ❌ (DOBLE RESTA!)
+6. Resultado: Producto muestra stock 90 cuando debería ser 95
+
+IMPACTO:
+--------
+- Pérdida de datos de inventario
+- Clientes ven stock incorrecto
+- Posibles ventas rechazadas por "stock insuficiente" falso
+- Error 500 cuando stock queda en negativo
+
+SOLUCIÓN PROPUESTA:
+-------------------
+OPCIÓN A (RECOMENDADA): Eliminar la resta manual del serializer y dejar que
+                        SOLO el signal maneje el stock.
+
+📄 serializers.py - ELIMINAR las líneas 116-118:
+```python
+# ELIMINAR ESTAS LÍNEAS:
+# Actualizar stock
+producto.stock_disponible -= cantidad
+producto.save()
+```
+
+El código debe quedar así (líneas ~116-140):
+```python
+# Validar stock disponible (SIN modificar el stock aquí)
+if producto.stock_disponible < cantidad:
+    raise serializers.ValidationError(f"Stock insuficiente para {producto.nombre}")
+
+# Crear detalle de factura
+DetalleFactura.objects.create(
+    factura=factura, 
+    producto=producto, 
+    cantidad=cantidad, 
+    precio_unitario=precio_unitario, 
+    subtotal=subtotal_detalle
+)
+
+# Crear movimiento de salida (el signal se encarga del stock)
+from .models import Movimiento
+Movimiento.objects.create(
+    producto=producto,
+    tipo='salida',
+    cantidad=cantidad,
+    descripcion=f"Venta (Factura #{factura.numero_factura})",
+    usuario=usuario
+)
+```
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    🚨 BUG #2: SIN TRANSACCIÓN ATÓMICA (CRÍTICO)              ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+DESCRIPCIÓN DEL PROBLEMA:
+-------------------------
+El método create() de FacturaSerializer no usa transaction.atomic(), lo que
+significa que si ocurre un error a mitad del proceso, quedan datos inconsistentes
+en la base de datos.
+
+ARCHIVO AFECTADO:
+-----------------
+cabravietnamirachamsinpeladobackend/inventario/serializers.py (líneas 90-172)
+
+ANÁLISIS TÉCNICO:
+-----------------
+Actualmente el código:
+1. Crea la factura
+2. Itera sobre detalles y crea cada uno
+3. Modifica stock de productos
+4. Crea movimientos
+5. Actualiza totales de factura
+
+Si hay error en el paso 3 o 4 (ej: segundo producto sin stock), los cambios
+del paso 1-2 YA ESTÁN en la base de datos y no se revierten.
+
+El bloque try/except actual (líneas 90, 164-172) intenta borrar la factura
+pero NO revierte:
+- Los DetalleFactura creados
+- Los cambios de stock en productos
+- Los Movimientos creados
+
+SOLUCIÓN PROPUESTA:
+-------------------
+Envolver TODO el método en transaction.atomic():
+
+📄 serializers.py - AGREGAR al inicio del método create():
+```python
+from django.db import transaction
+
+def create(self, validated_data):
+    with transaction.atomic():
+        detalles_data = validated_data.pop('detalles')
+        usuario = self.context['request'].user if 'request' in self.context else None
+        
+        # ... resto del código ...
+```
+
+BENEFICIO:
+----------
+Si ocurre CUALQUIER error, TODOS los cambios se revierten automáticamente.
+No hay datos huérfanos ni inconsistentes.
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    ⚠️ BUG #3: IVA INCORRECTO (ALTO)                          ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+DESCRIPCIÓN DEL PROBLEMA:
+-------------------------
+El IVA está calculado al 12% cuando en PARAGUAY el IVA es del 10%.
+
+ARCHIVO AFECTADO:
+-----------------
+cabravietnamirachamsinpeladobackend/inventario/serializers.py (línea 156)
+
+CÓDIGO ACTUAL (INCORRECTO):
+---------------------------
+```python
+impuesto_total = (subtotal - descuento_total) * Decimal('0.12')  # IVA 12%
+```
+
+SOLUCIÓN:
+---------
+```python
+impuesto_total = (subtotal - descuento_total) * Decimal('0.10')  # IVA 10% (Paraguay)
+```
+
+NOTA ADICIONAL:
+---------------
+Considerar hacer el IVA configurable desde settings.py o una tabla de
+configuración para facilitar cambios futuros.
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    ⚠️ BUG #4: VALIDACIÓN DE STOCK TARDÍA (MEDIO)             ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+DESCRIPCIÓN DEL PROBLEMA:
+-------------------------
+La validación de stock se hace DENTRO del loop de detalles. Si el tercer
+producto no tiene stock, ya se modificaron los dos primeros productos.
+
+ARCHIVO AFECTADO:
+-----------------
+cabravietnamirachamsinpeladobackend/inventario/serializers.py (líneas 114-116)
+
+CÓDIGO ACTUAL:
+--------------
+```python
+for detalle in detalles_data:
+    # ... obtener producto y cantidad ...
+    
+    # Validar stock disponible
+    if producto.stock_disponible < cantidad:
+        raise serializers.ValidationError(f"Stock insuficiente para {producto.nombre}")
+    
+    # Actualizar stock (esto YA pasó para productos anteriores)
+    producto.stock_disponible -= cantidad
+    producto.save()
+```
+
+SOLUCIÓN PROPUESTA:
+-------------------
+PRE-VALIDAR todo el stock ANTES de hacer cualquier cambio:
+
+```python
+def create(self, validated_data):
+    with transaction.atomic():
+        detalles_data = validated_data.pop('detalles')
+        
+        # ========== PRE-VALIDACIÓN DE STOCK ==========
+        for detalle in detalles_data:
+            producto = detalle['producto']
+            cantidad = detalle['cantidad']
+            if producto.stock_disponible < cantidad:
+                raise serializers.ValidationError(
+                    f"Stock insuficiente para {producto.nombre}. "
+                    f"Disponible: {producto.stock_disponible}, Solicitado: {cantidad}"
+                )
+        
+        # ========== CREAR FACTURA Y DETALLES ==========
+        # ... resto del código (ya validado) ...
+```
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    📝 BUG #5: IMPORTACIONES REPETIDAS (BAJO)                  ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+DESCRIPCIÓN DEL PROBLEMA:
+-------------------------
+El código importa Decimal y Movimiento MÚLTIPLES VECES dentro del loop,
+lo cual es ineficiente aunque no cause errores funcionales.
+
+ARCHIVO AFECTADO:
+-----------------
+cabravietnamirachamsinpeladobackend/inventario/serializers.py
+
+CÓDIGO ACTUAL:
+--------------
+```python
+def create(self, validated_data):
+    # ...
+    from decimal import Decimal  # Import 1
+    subtotal = Decimal('0')
+    
+    for detalle in detalles_data:
+        from decimal import Decimal  # Import 2 (repetido en cada iteración!)
+        # ...
+        from .models import Movimiento  # Import 3 (repetido en cada iteración!)
+    
+    from decimal import Decimal  # Import 4 (repetido otra vez!)
+```
+
+SOLUCIÓN:
+---------
+Mover TODAS las importaciones al inicio del archivo o al inicio del método:
+
+```python
+def create(self, validated_data):
+    from decimal import Decimal
+    from .models import Movimiento
+    
+    # ... resto del código SIN imports repetidos ...
+```
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║               🔍 BUG #6: INCONSISTENCIA EN RECEPCIÓN (POTENCIAL)             ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+DESCRIPCIÓN DEL PROBLEMA:
+-------------------------
+El RecepcionMercaderiaSerializer tiene el MISMO PROBLEMA pero para ENTRADAS.
+Hace la suma manual Y crea un Movimiento que dispara el signal.
+
+ARCHIVO AFECTADO:
+-----------------
+cabravietnamirachamsinpeladobackend/inventario/serializers.py (líneas 318-332)
+
+CÓDIGO ACTUAL (DOBLE SUMA):
+---------------------------
+```python
+# Actualizar stock del producto
+producto.stock_disponible += cantidad  # <-- SUMA MANUAL
+producto.save()
+
+# Crear movimiento de entrada
+Movimiento.objects.create(
+    producto=producto,
+    tipo='entrada',  # <-- El signal TAMBIÉN suma!
+    cantidad=cantidad,
+    descripcion=f"Recepción #{recepcion.numero_recepcion}",
+    usuario=usuario
+)
+```
+
+SOLUCIÓN:
+---------
+Igual que en facturación: ELIMINAR la suma manual y dejar que SOLO el signal
+maneje el stock.
+
+```python
+# Crear el detalle de recepción
+DetalleRecepcion.objects.create(recepcion=recepcion, **detalle)
+
+# Crear movimiento de entrada (el signal maneja el stock)
+Movimiento.objects.create(
+    producto=producto,
+    tipo='entrada',
+    cantidad=cantidad,
+    descripcion=f"Recepción #{recepcion.numero_recepcion}",
+    usuario=usuario
+)
+# NO hacer producto.stock_disponible += cantidad aquí
+```
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                         📋 CÓDIGO CORREGIDO COMPLETO                          ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+A continuación, el método create() de FacturaSerializer completamente corregido:
+
+```python
+def create(self, validated_data):
+    from django.db import transaction
+    from decimal import Decimal
+    from .models import Movimiento, DetalleFactura
+    
+    with transaction.atomic():
+        detalles_data = validated_data.pop('detalles')
+        usuario = self.context['request'].user if 'request' in self.context else None
+        
+        # Eliminar campos calculados que no deben venir del frontend
+        validated_data.pop('usuario', None)
+        validated_data.pop('subtotal', None)
+        validated_data.pop('total', None)
+        validated_data.pop('impuesto_total', None)
+        
+        # ========== PRE-VALIDACIÓN DE STOCK ==========
+        for detalle in detalles_data:
+            producto = detalle['producto']
+            cantidad = detalle['cantidad']
+            if producto.stock_disponible < cantidad:
+                raise serializers.ValidationError(
+                    f"Stock insuficiente para {producto.nombre}. "
+                    f"Disponible: {producto.stock_disponible}, Solicitado: {cantidad}"
+                )
+        
+        # ========== CREAR FACTURA ==========
+        factura = Factura.objects.create(
+            usuario=usuario, 
+            total=0,
+            **validated_data
+        )
+        
+        subtotal = Decimal('0')
+        
+        # ========== PROCESAR DETALLES ==========
+        for detalle in detalles_data:
+            producto = detalle['producto']
+            cantidad = detalle['cantidad']
+            precio_unitario = detalle.get('precio_unitario', producto.precio_unitario)
+            
+            # Convertir a Decimal
+            precio_unitario = Decimal(str(precio_unitario))
+            cantidad_decimal = Decimal(str(cantidad))
+            subtotal_detalle = cantidad_decimal * precio_unitario
+            
+            # Crear detalle de factura
+            DetalleFactura.objects.create(
+                factura=factura, 
+                producto=producto, 
+                cantidad=cantidad, 
+                precio_unitario=precio_unitario, 
+                subtotal=subtotal_detalle
+            )
+            
+            # Crear movimiento de salida (EL SIGNAL MANEJA EL STOCK)
+            Movimiento.objects.create(
+                producto=producto,
+                tipo='salida',
+                cantidad=cantidad,
+                descripcion=f"Venta (Factura #{factura.numero_factura})",
+                usuario=usuario
+            )
+            
+            subtotal += subtotal_detalle
+        
+        # ========== CALCULAR TOTALES ==========
+        descuento_total = Decimal(str(validated_data.get('descuento_total', 0)))
+        impuesto_total = (subtotal - descuento_total) * Decimal('0.10')  # IVA 10% PARAGUAY
+        total = subtotal - descuento_total + impuesto_total
+        
+        # Actualizar factura con totales
+        factura.subtotal = subtotal
+        factura.impuesto_total = impuesto_total
+        factura.total = total
+        factura.save()
+        
+        return factura
+```
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                         📋 RESUMEN DE CAMBIOS REQUERIDOS                      ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+ARCHIVO: serializers.py
+
+| Línea(s)  | Acción   | Descripción                                      |
+|-----------|----------|--------------------------------------------------|
+| 90        | AGREGAR  | with transaction.atomic():                       |
+| 93        | MOVER    | Imports de Decimal y Movimiento al inicio        |
+| 106-108   | AGREGAR  | Pre-validación de stock (loop separado)          |
+| 116-118   | ELIMINAR | Resta manual de stock (producto.stock -= cant)   |
+| 156       | CAMBIAR  | Decimal('0.12') → Decimal('0.10')                |
+| 164-172   | ELIMINAR | Bloque try/except innecesario con atomic()       |
+| 318-320   | ELIMINAR | Suma manual en RecepcionMercaderia               |
+
+ARCHIVO: signals.py
+- NO MODIFICAR - El signal está correcto, es el serializer el que está mal
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                              ⚡ PRIORIDAD DE FIX                              ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+1. 🔴 CRÍTICO: Doble resta de stock (BUG #1)
+2. 🔴 CRÍTICO: Transaction atomic (BUG #2)
+3. 🟠 ALTO: IVA incorrecto (BUG #3)
+4. 🟡 MEDIO: Pre-validación de stock (BUG #4)
+5. 🟢 BAJO: Imports repetidos (BUG #5)
+6. 🟡 MEDIO: Doble suma en recepción (BUG #6)
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                              🧪 TESTING POST-FIX                              ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+Después de aplicar los cambios, probar:
+
+TEST 1: Factura Simple
+----------------------
+1. Producto A con stock 100
+2. Crear factura con 5 unidades de Producto A
+3. Verificar: stock debe ser 95 (no 90)
+
+TEST 2: Factura con Error
+-------------------------
+1. Producto A con stock 10
+2. Producto B con stock 2
+3. Crear factura: 5x Producto A + 10x Producto B (debe fallar)
+4. Verificar: stock de ambos productos debe quedar INTACTO (10 y 2)
+
+TEST 3: IVA Correcto
+--------------------
+1. Crear factura con subtotal 100.000 Gs
+2. IVA debe ser: 10.000 Gs (10%)
+3. Total: 110.000 Gs
+
+TEST 4: Recepción de Mercadería
+-------------------------------
+1. Producto A con stock 50
+2. Crear recepción de 20 unidades
+3. Verificar: stock debe ser 70 (no 90)
+
+
+================================================================================
+                        FIN DEL DOCUMENTO DE AUDITORÍA
+================================================================================
+                    Preparado para: Equipo de Desarrollo
+                    Sistema: Ferretería J&G v2.0
+================================================================================

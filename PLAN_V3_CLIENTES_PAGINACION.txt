@@ -1,0 +1,1528 @@
+================================================================================
+PLAN DE IMPLEMENTACION V3 - SISTEMA JADI
+================================================================================
+Para: Claude Sonnet 4.5 (Programador)
+De: Arquitecto Opus (DevOps Senior)
+Fecha: 14 de diciembre de 2025
+================================================================================
+
+RESUMEN EJECUTIVO
+================================================================================
+
+Este plan tiene 3 objetivos principales:
+
+1. CORREGIR BUG DE PAGINACION
+   - Los dropdowns solo muestran 10 productos (primera pagina)
+   - Solucion: Crear endpoints especiales sin paginacion
+
+2. CREAR MODULO DE CLIENTES
+   - CRUD completo con UI profesional
+   - Permitir "Sin Documento" para Consumidor Final
+
+3. AUTOCOMPLETADO EN FACTURACION
+   - Buscar cliente por RUC/CI automaticamente
+   - Opcion de guardar cliente nuevo al facturar
+
+IMPORTANTE: Mantener UX/UI hermosa y consistente con el resto del sistema.
+
+
+================================================================================
+================================================================================
+TAREA 1: PAGINACION PERSONALIZADA (BACKEND)
+================================================================================
+================================================================================
+
+
+--------------------------------------------------------------------------------
+1.1 CREAR ARCHIVO: inventario/pagination.py
+--------------------------------------------------------------------------------
+
+Ubicacion: cabravietnamirachamsinpeladobackend/inventario/pagination.py
+
+CONTENIDO COMPLETO:
+
+from rest_framework.pagination import PageNumberPagination
+
+
+class StandardPagination(PageNumberPagination):
+    """Paginacion estandar para listados normales"""
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+class LargePagination(PageNumberPagination):
+    """Paginacion grande para dropdowns y selectores"""
+    page_size = 1000
+    page_size_query_param = 'page_size'
+    max_page_size = 5000
+
+
+--------------------------------------------------------------------------------
+1.2 MODIFICAR: inventario_ferreteria/settings.py
+--------------------------------------------------------------------------------
+
+BUSCAR (alrededor de linea 113-121):
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+}
+
+CAMBIAR A:
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    # Paginacion personalizada
+    'DEFAULT_PAGINATION_CLASS': 'inventario.pagination.StandardPagination',
+    'PAGE_SIZE': 10,
+}
+
+
+--------------------------------------------------------------------------------
+1.3 AGREGAR EN: inventario/views.py (endpoints para dropdowns)
+--------------------------------------------------------------------------------
+
+AGREGAR despues de los imports existentes:
+
+from .pagination import LargePagination
+
+AGREGAR al final del archivo (antes del ultimo cierre):
+
+# ==========================================
+# ENDPOINTS PARA DROPDOWNS (SIN PAGINACION)
+# ==========================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def productos_dropdown(request):
+    """
+    Retorna TODOS los productos para usar en selectores/dropdowns.
+    Solo campos esenciales para optimizar transferencia.
+    """
+    productos = Producto.objects.filter(activo=True).values(
+        'id', 'codigo', 'nombre', 'marca', 'precio_unitario', 'stock_disponible'
+    ).order_by('nombre')
+    
+    return Response(list(productos))
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def proveedores_dropdown(request):
+    """
+    Retorna TODOS los proveedores para selectores.
+    """
+    proveedores = Proveedor.objects.filter(activo=True).values(
+        'id', 'nombre', 'ruc'
+    ).order_by('nombre')
+    
+    return Response(list(proveedores))
+
+
+--------------------------------------------------------------------------------
+1.4 AGREGAR EN: inventario_ferreteria/urls.py (rutas de dropdowns)
+--------------------------------------------------------------------------------
+
+AGREGAR import:
+
+from inventario.views import productos_dropdown, proveedores_dropdown
+
+AGREGAR en urlpatterns (antes del path de api/):
+
+    # Endpoints para dropdowns (sin paginacion)
+    path('api/productos/dropdown/', productos_dropdown, name='productos-dropdown'),
+    path('api/proveedores/dropdown/', proveedores_dropdown, name='proveedores-dropdown'),
+
+
+================================================================================
+================================================================================
+TAREA 2: MODELO CLIENTE (BACKEND)
+================================================================================
+================================================================================
+
+
+--------------------------------------------------------------------------------
+2.1 AGREGAR EN: inventario/models.py (modelo Cliente)
+--------------------------------------------------------------------------------
+
+AGREGAR ANTES de "class Factura":
+
+class Cliente(models.Model):
+    """
+    Modelo para gestionar clientes recurrentes.
+    Permite autocompletar datos en facturacion.
+    """
+    TIPO_DOCUMENTO_CHOICES = [
+        ('ninguno', 'Sin documento'),
+        ('cedula', 'Cedula de Identidad'),
+        ('ruc', 'RUC'),
+    ]
+    
+    # Identificacion
+    tipo_documento = models.CharField(
+        max_length=10, 
+        choices=TIPO_DOCUMENTO_CHOICES, 
+        default='cedula'
+    )
+    numero_documento = models.CharField(
+        max_length=30, 
+        blank=True,
+        null=True,
+        help_text='RUC o Cedula de Identidad'
+    )
+    
+    # Datos personales
+    nombre = models.CharField(max_length=150)
+    email = models.EmailField(blank=True, null=True)
+    telefono = models.CharField(max_length=30, blank=True, null=True)
+    direccion = models.TextField(blank=True, null=True)
+    
+    # Control
+    activo = models.BooleanField(default=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    
+    # Estadisticas (se actualizan automaticamente)
+    total_compras = models.PositiveIntegerField(default=0)
+    monto_total_compras = models.DecimalField(
+        max_digits=15, 
+        decimal_places=0, 
+        default=0
+    )
+    
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = 'Cliente'
+        verbose_name_plural = 'Clientes'
+    
+    def __str__(self):
+        if self.numero_documento:
+            return f"{self.nombre} ({self.numero_documento})"
+        return self.nombre
+
+
+--------------------------------------------------------------------------------
+2.2 AGREGAR EN: inventario/serializers.py (serializers de Cliente)
+--------------------------------------------------------------------------------
+
+AGREGAR import del modelo:
+
+from .models import Categoria, Subcategoria, Producto, Movimiento, Factura, DetalleFactura, Proveedor, Cliente
+
+AGREGAR despues de los imports:
+
+# ==========================================
+# SERIALIZERS DE CLIENTE
+# ==========================================
+
+class ClienteSerializer(serializers.ModelSerializer):
+    """Serializer completo para CRUD de clientes"""
+    
+    class Meta:
+        model = Cliente
+        fields = [
+            'id',
+            'tipo_documento',
+            'numero_documento',
+            'nombre',
+            'email',
+            'telefono',
+            'direccion',
+            'activo',
+            'fecha_registro',
+            'fecha_actualizacion',
+            'total_compras',
+            'monto_total_compras'
+        ]
+        read_only_fields = [
+            'fecha_registro', 
+            'fecha_actualizacion',
+            'total_compras',
+            'monto_total_compras'
+        ]
+
+
+class ClienteDropdownSerializer(serializers.ModelSerializer):
+    """Serializer ligero para autocompletado"""
+    class Meta:
+        model = Cliente
+        fields = [
+            'id',
+            'tipo_documento',
+            'numero_documento',
+            'nombre',
+            'email',
+            'telefono',
+            'direccion'
+        ]
+
+
+--------------------------------------------------------------------------------
+2.3 AGREGAR EN: inventario/views.py (ViewSet de Cliente)
+--------------------------------------------------------------------------------
+
+AGREGAR imports:
+
+from .models import Cliente
+from .serializers import ClienteSerializer, ClienteDropdownSerializer
+
+AGREGAR despues de ProductoProveedorViewSet:
+
+# ==========================================
+# VIEWSET DE CLIENTES
+# ==========================================
+
+class ClienteViewSet(viewsets.ModelViewSet):
+    """
+    CRUD completo para gestion de clientes.
+    Incluye busqueda por documento para autocompletado.
+    """
+    queryset = Cliente.objects.all()
+    serializer_class = ClienteSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['tipo_documento', 'activo']
+    search_fields = ['nombre', 'numero_documento', 'email', 'telefono']
+    ordering_fields = ['nombre', 'fecha_registro', 'total_compras']
+    ordering = ['nombre']
+    
+    @action(detail=False, methods=['get'])
+    def buscar_por_documento(self, request):
+        """
+        Busca cliente por numero de documento.
+        Usado para autocompletado en facturacion.
+        GET /api/clientes/buscar_por_documento/?documento=123456
+        """
+        documento = request.query_params.get('documento', '').strip()
+        
+        if not documento:
+            return Response(
+                {'error': 'Parametro "documento" requerido'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            cliente = Cliente.objects.get(numero_documento=documento, activo=True)
+            serializer = ClienteDropdownSerializer(cliente)
+            return Response({
+                'encontrado': True,
+                'cliente': serializer.data
+            })
+        except Cliente.DoesNotExist:
+            return Response({
+                'encontrado': False,
+                'mensaje': 'Cliente no registrado'
+            })
+    
+    @action(detail=False, methods=['get'])
+    def dropdown(self, request):
+        """
+        Lista de clientes para selectores (sin paginacion).
+        """
+        clientes = Cliente.objects.filter(activo=True).values(
+            'id', 'nombre', 'numero_documento', 'tipo_documento'
+        ).order_by('nombre')
+        return Response(list(clientes))
+    
+    @action(detail=False, methods=['post'])
+    def crear_desde_factura(self, request):
+        """
+        Crea un cliente nuevo desde los datos de una factura.
+        Usado cuando se marca "Guardar cliente" al facturar.
+        """
+        data = request.data
+        
+        # Verificar si ya existe
+        numero_doc = data.get('numero_documento', '').strip()
+        if numero_doc and Cliente.objects.filter(numero_documento=numero_doc).exists():
+            return Response(
+                {'error': 'Ya existe un cliente con ese documento'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer = ClienteSerializer(data=data)
+        if serializer.is_valid():
+            cliente = serializer.save()
+            return Response({
+                'mensaje': 'Cliente creado exitosamente',
+                'cliente': ClienteDropdownSerializer(cliente).data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+--------------------------------------------------------------------------------
+2.4 AGREGAR EN: inventario_ferreteria/urls.py (registrar ViewSet)
+--------------------------------------------------------------------------------
+
+AGREGAR import:
+
+from inventario.views import ClienteViewSet
+
+AGREGAR en el router (despues de los otros register):
+
+router.register(r'clientes', ClienteViewSet, basename='cliente')
+
+
+--------------------------------------------------------------------------------
+2.5 EJECUTAR MIGRACIONES
+--------------------------------------------------------------------------------
+
+Comandos a ejecutar en el contenedor backend:
+
+docker exec -it ferreteria-api python manage.py makemigrations inventario
+docker exec -it ferreteria-api python manage.py migrate
+
+
+================================================================================
+================================================================================
+TAREA 3: COMPONENTE CLIENTES (FRONTEND)
+================================================================================
+================================================================================
+
+
+--------------------------------------------------------------------------------
+3.1 CREAR ARCHIVO: src/app/cliente.model.ts
+--------------------------------------------------------------------------------
+
+CONTENIDO COMPLETO:
+
+export interface Cliente {
+  id?: number;
+  tipo_documento: 'ninguno' | 'cedula' | 'ruc';
+  numero_documento: string;
+  nombre: string;
+  email?: string;
+  telefono?: string;
+  direccion?: string;
+  activo?: boolean;
+  fecha_registro?: string;
+  fecha_actualizacion?: string;
+  total_compras?: number;
+  monto_total_compras?: number;
+}
+
+export interface ClienteResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Cliente[];
+}
+
+export interface BusquedaClienteResponse {
+  encontrado: boolean;
+  cliente?: Cliente;
+  mensaje?: string;
+}
+
+
+--------------------------------------------------------------------------------
+3.2 CREAR ARCHIVO: src/app/cliente.service.ts
+--------------------------------------------------------------------------------
+
+CONTENIDO COMPLETO:
+
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Cliente, ClienteResponse, BusquedaClienteResponse } from './cliente.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ClienteService {
+  private baseUrl = '/api/clientes';
+
+  constructor(private http: HttpClient) {}
+
+  // Obtener todos los clientes con paginacion
+  getClientes(filtros: any = {}): Observable<ClienteResponse> {
+    let params = new HttpParams();
+    
+    if (filtros.search) params = params.set('search', filtros.search);
+    if (filtros.tipo_documento) params = params.set('tipo_documento', filtros.tipo_documento);
+    if (filtros.activo !== undefined) params = params.set('activo', filtros.activo.toString());
+    if (filtros.page) params = params.set('page', filtros.page.toString());
+    
+    return this.http.get<ClienteResponse>(this.baseUrl + '/', { params });
+  }
+
+  // Obtener un cliente por ID
+  getCliente(id: number): Observable<Cliente> {
+    return this.http.get<Cliente>(`${this.baseUrl}/${id}/`);
+  }
+
+  // Crear nuevo cliente
+  crearCliente(cliente: Cliente): Observable<Cliente> {
+    return this.http.post<Cliente>(this.baseUrl + '/', cliente);
+  }
+
+  // Actualizar cliente existente
+  actualizarCliente(id: number, cliente: Partial<Cliente>): Observable<Cliente> {
+    return this.http.patch<Cliente>(`${this.baseUrl}/${id}/`, cliente);
+  }
+
+  // Eliminar cliente
+  eliminarCliente(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}/`);
+  }
+
+  // ==========================================
+  // METODOS PARA AUTOCOMPLETADO EN FACTURACION
+  // ==========================================
+
+  // Buscar cliente por numero de documento
+  buscarPorDocumento(documento: string): Observable<BusquedaClienteResponse> {
+    const params = new HttpParams().set('documento', documento);
+    return this.http.get<BusquedaClienteResponse>(
+      `${this.baseUrl}/buscar_por_documento/`, 
+      { params }
+    );
+  }
+
+  // Lista para dropdown (sin paginacion)
+  getClientesDropdown(): Observable<Cliente[]> {
+    return this.http.get<Cliente[]>(`${this.baseUrl}/dropdown/`);
+  }
+
+  // Crear cliente desde factura
+  crearDesdeFactura(datosCliente: Partial<Cliente>): Observable<any> {
+    return this.http.post(`${this.baseUrl}/crear_desde_factura/`, datosCliente);
+  }
+}
+
+
+--------------------------------------------------------------------------------
+3.3 CREAR ARCHIVO: src/app/clientes.component.ts
+--------------------------------------------------------------------------------
+
+CONTENIDO COMPLETO:
+
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { ClienteService } from './cliente.service';
+import { Cliente, ClienteResponse } from './cliente.model';
+import { SweetAlertService } from './sweetalert.service';
+
+@Component({
+  selector: 'app-clientes',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink],
+  templateUrl: './clientes.component.html',
+  styleUrls: ['./clientes.component.scss']
+})
+export class ClientesComponent implements OnInit {
+  clientes: Cliente[] = [];
+  
+  // Control de UI
+  cargando = false;
+  mostrarModal = false;
+  esEdicion = false;
+  guardando = false;
+  
+  // Filtros
+  busqueda = '';
+  filtroTipo = '';
+  soloActivos = true;
+  
+  // Paginacion
+  totalClientes = 0;
+  paginaActual = 1;
+  
+  // Formulario
+  nuevoCliente: Cliente = this.clienteVacio();
+
+  constructor(
+    private clienteService: ClienteService,
+    private swal: SweetAlertService
+  ) {}
+
+  ngOnInit() {
+    this.cargarClientes();
+  }
+
+  clienteVacio(): Cliente {
+    return {
+      tipo_documento: 'cedula',
+      numero_documento: '',
+      nombre: '',
+      email: '',
+      telefono: '',
+      direccion: '',
+      activo: true
+    };
+  }
+
+  cargarClientes() {
+    this.cargando = true;
+    
+    const filtros: any = {
+      search: this.busqueda || undefined,
+      tipo_documento: this.filtroTipo || undefined,
+      page: this.paginaActual
+    };
+    
+    if (this.soloActivos) {
+      filtros.activo = true;
+    }
+
+    this.clienteService.getClientes(filtros).subscribe({
+      next: (response: ClienteResponse) => {
+        this.clientes = response.results;
+        this.totalClientes = response.count;
+        this.cargando = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar clientes:', error);
+        this.swal.error('Error al cargar clientes');
+        this.cargando = false;
+      }
+    });
+  }
+
+  buscar() {
+    this.paginaActual = 1;
+    this.cargarClientes();
+  }
+
+  limpiarFiltros() {
+    this.busqueda = '';
+    this.filtroTipo = '';
+    this.soloActivos = true;
+    this.paginaActual = 1;
+    this.cargarClientes();
+  }
+
+  abrirModalNuevo() {
+    this.nuevoCliente = this.clienteVacio();
+    this.esEdicion = false;
+    this.mostrarModal = true;
+  }
+
+  abrirModalEditar(cliente: Cliente) {
+    this.nuevoCliente = { ...cliente };
+    this.esEdicion = true;
+    this.mostrarModal = true;
+  }
+
+  cerrarModal() {
+    this.mostrarModal = false;
+    this.nuevoCliente = this.clienteVacio();
+  }
+
+  async guardarCliente() {
+    if (!this.validarFormulario()) return;
+
+    this.guardando = true;
+
+    try {
+      if (this.esEdicion && this.nuevoCliente.id) {
+        await this.clienteService.actualizarCliente(
+          this.nuevoCliente.id, 
+          this.nuevoCliente
+        ).toPromise();
+        this.swal.success('Cliente actualizado correctamente');
+      } else {
+        await this.clienteService.crearCliente(this.nuevoCliente).toPromise();
+        this.swal.success('Cliente creado correctamente');
+      }
+      
+      this.cerrarModal();
+      this.cargarClientes();
+    } catch (error: any) {
+      console.error('Error al guardar cliente:', error);
+      
+      if (error.error?.numero_documento) {
+        this.swal.error('Ya existe un cliente con ese numero de documento');
+      } else {
+        this.swal.error('Error al guardar cliente');
+      }
+    } finally {
+      this.guardando = false;
+    }
+  }
+
+  validarFormulario(): boolean {
+    if (!this.nuevoCliente.nombre?.trim()) {
+      this.swal.error('El nombre es obligatorio');
+      return false;
+    }
+    
+    if (this.nuevoCliente.tipo_documento !== 'ninguno') {
+      if (!this.nuevoCliente.numero_documento?.trim()) {
+        this.swal.error('El numero de documento es obligatorio');
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  async confirmarEliminar(cliente: Cliente) {
+    const result = await this.swal.confirm(
+      'Eliminar Cliente',
+      `¿Estas seguro de eliminar a "${cliente.nombre}"?`
+    );
+
+    if (result.isConfirmed && cliente.id) {
+      try {
+        await this.clienteService.eliminarCliente(cliente.id).toPromise();
+        this.swal.success('Cliente eliminado');
+        this.cargarClientes();
+      } catch (error) {
+        this.swal.error('No se puede eliminar: tiene facturas asociadas');
+      }
+    }
+  }
+
+  toggleActivo(cliente: Cliente) {
+    if (!cliente.id) return;
+    
+    this.clienteService.actualizarCliente(cliente.id, {
+      activo: !cliente.activo
+    }).subscribe({
+      next: () => {
+        cliente.activo = !cliente.activo;
+        this.swal.success(
+          cliente.activo ? 'Cliente activado' : 'Cliente desactivado'
+        );
+      },
+      error: () => this.swal.error('Error al actualizar estado')
+    });
+  }
+
+  // Paginacion
+  cambiarPagina(pagina: number) {
+    if (pagina < 1 || pagina > this.totalPaginas) return;
+    this.paginaActual = pagina;
+    this.cargarClientes();
+  }
+
+  get totalPaginas(): number {
+    return Math.ceil(this.totalClientes / 10);
+  }
+
+  get paginasArray(): number[] {
+    const paginas: number[] = [];
+    for (let i = 1; i <= this.totalPaginas; i++) {
+      paginas.push(i);
+    }
+    return paginas;
+  }
+}
+
+
+--------------------------------------------------------------------------------
+3.4 CREAR ARCHIVO: src/app/clientes.component.html
+--------------------------------------------------------------------------------
+
+CONTENIDO COMPLETO:
+
+<div class="container-fluid px-4">
+  <!-- Encabezado -->
+  <h1 class="mt-4">
+    <i class="fas fa-users me-2 text-primary"></i>Gestion de Clientes
+  </h1>
+  <ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a routerLink="/">Inicio</a></li>
+    <li class="breadcrumb-item active">Clientes</li>
+  </ol>
+
+  <!-- Card de Filtros -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-light">
+      <i class="fas fa-filter me-2"></i>Filtros de Busqueda
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <!-- Busqueda -->
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Buscar:</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white">
+              <i class="fas fa-search text-muted"></i>
+            </span>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="busqueda"
+              placeholder="Nombre, documento, email..."
+              (keyup.enter)="buscar()">
+          </div>
+        </div>
+
+        <!-- Filtro por tipo -->
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">Tipo Doc:</label>
+          <select class="form-select" [(ngModel)]="filtroTipo" (change)="buscar()">
+            <option value="">Todos</option>
+            <option value="cedula">Cedula</option>
+            <option value="ruc">RUC</option>
+            <option value="ninguno">Sin documento</option>
+          </select>
+        </div>
+
+        <!-- Solo activos -->
+        <div class="col-md-2">
+          <div class="form-check mt-4">
+            <input 
+              class="form-check-input" 
+              type="checkbox" 
+              [(ngModel)]="soloActivos"
+              (change)="buscar()"
+              id="soloActivos">
+            <label class="form-check-label" for="soloActivos">
+              Solo activos
+            </label>
+          </div>
+        </div>
+
+        <!-- Contador -->
+        <div class="col-md-2 text-center">
+          <span class="badge bg-primary fs-6 px-3 py-2">
+            {{ totalClientes }} clientes
+          </span>
+        </div>
+
+        <!-- Botones -->
+        <div class="col-md-2 text-end">
+          <button class="btn btn-outline-secondary me-2" (click)="limpiarFiltros()" title="Limpiar filtros">
+            <i class="fas fa-times"></i>
+          </button>
+          <button class="btn btn-success" (click)="abrirModalNuevo()">
+            <i class="fas fa-plus me-1"></i>Nuevo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de Clientes -->
+  <div class="card mb-4 shadow">
+    <div class="card-header bg-primary text-white">
+      <i class="fas fa-table me-2"></i>Listado de Clientes
+    </div>
+    <div class="card-body">
+      <!-- Loading -->
+      <div *ngIf="cargando" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Cargando clientes...</p>
+      </div>
+
+      <!-- Tabla -->
+      <div *ngIf="!cargando" class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 130px;">Documento</th>
+              <th>Cliente</th>
+              <th style="width: 150px;">Telefono</th>
+              <th>Email</th>
+              <th class="text-center" style="width: 100px;">Compras</th>
+              <th class="text-end" style="width: 150px;">Total Gastado</th>
+              <th class="text-center" style="width: 90px;">Estado</th>
+              <th class="text-center" style="width: 140px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let cliente of clientes" 
+                [class.table-secondary]="!cliente.activo"
+                class="cliente-row">
+              <td>
+                <span class="badge" 
+                      [ngClass]="cliente.tipo_documento === 'ruc' ? 'bg-info' : 
+                                 cliente.tipo_documento === 'cedula' ? 'bg-warning text-dark' : 
+                                 'bg-secondary'">
+                  {{ cliente.tipo_documento === 'ruc' ? 'RUC' : 
+                     cliente.tipo_documento === 'cedula' ? 'CI' : 'S/D' }}
+                </span>
+                <br>
+                <small class="text-muted">{{ cliente.numero_documento || 'Sin documento' }}</small>
+              </td>
+              <td>
+                <strong class="text-dark">{{ cliente.nombre }}</strong>
+                <br *ngIf="cliente.direccion">
+                <small class="text-muted" *ngIf="cliente.direccion">
+                  <i class="fas fa-map-marker-alt me-1 text-danger"></i>{{ cliente.direccion | slice:0:40 }}{{ cliente.direccion && cliente.direccion.length > 40 ? '...' : '' }}
+                </small>
+              </td>
+              <td>
+                <span *ngIf="cliente.telefono">
+                  <i class="fas fa-phone me-1 text-success"></i>{{ cliente.telefono }}
+                </span>
+                <span *ngIf="!cliente.telefono" class="text-muted">-</span>
+              </td>
+              <td>
+                <small *ngIf="cliente.email">
+                  <i class="fas fa-envelope me-1 text-primary"></i>{{ cliente.email }}
+                </small>
+                <span *ngIf="!cliente.email" class="text-muted">-</span>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-primary rounded-pill px-3">{{ cliente.total_compras || 0 }}</span>
+              </td>
+              <td class="text-end">
+                <strong class="text-success fs-6">
+                  Gs {{ cliente.monto_total_compras | number:'1.0-0' }}
+                </strong>
+              </td>
+              <td class="text-center">
+                <span class="badge rounded-pill px-3" [ngClass]="cliente.activo ? 'bg-success' : 'bg-danger'">
+                  {{ cliente.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-primary" 
+                          (click)="abrirModalEditar(cliente)"
+                          title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn" 
+                          [ngClass]="cliente.activo ? 'btn-outline-warning' : 'btn-outline-success'"
+                          (click)="toggleActivo(cliente)"
+                          [title]="cliente.activo ? 'Desactivar' : 'Activar'">
+                    <i class="fas" [ngClass]="cliente.activo ? 'fa-ban' : 'fa-check'"></i>
+                  </button>
+                  <button class="btn btn-outline-danger" 
+                          (click)="confirmarEliminar(cliente)"
+                          title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            
+            <!-- Mensaje si no hay datos -->
+            <tr *ngIf="clientes.length === 0">
+              <td colspan="8" class="text-center py-5">
+                <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                <p class="text-muted mb-0">No hay clientes registrados</p>
+                <button class="btn btn-primary mt-3" (click)="abrirModalNuevo()">
+                  <i class="fas fa-plus me-2"></i>Agregar primer cliente
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginacion -->
+      <nav *ngIf="totalPaginas > 1" class="mt-4">
+        <ul class="pagination justify-content-center mb-0">
+          <li class="page-item" [class.disabled]="paginaActual === 1">
+            <a class="page-link" (click)="cambiarPagina(paginaActual - 1)">
+              <i class="fas fa-chevron-left"></i>
+            </a>
+          </li>
+          <li class="page-item" 
+              *ngFor="let p of paginasArray"
+              [class.active]="paginaActual === p">
+            <a class="page-link" (click)="cambiarPagina(p)">{{ p }}</a>
+          </li>
+          <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+            <a class="page-link" (click)="cambiarPagina(paginaActual + 1)">
+              <i class="fas fa-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL DE CREAR/EDITAR CLIENTE -->
+<!-- ============================================ -->
+<div class="modal-backdrop fade show" *ngIf="mostrarModal"></div>
+<div class="modal fade show d-block" *ngIf="mostrarModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content shadow-lg">
+      
+      <!-- Header -->
+      <div class="modal-header" [ngClass]="esEdicion ? 'bg-warning' : 'bg-success'" 
+           [class.text-dark]="esEdicion" [class.text-white]="!esEdicion">
+        <h5 class="modal-title">
+          <i class="fas me-2" [ngClass]="esEdicion ? 'fa-edit' : 'fa-user-plus'"></i>
+          {{ esEdicion ? 'Editar Cliente' : 'Nuevo Cliente' }}
+        </h5>
+        <button type="button" class="btn-close" 
+                [class.btn-close-white]="!esEdicion"
+                (click)="cerrarModal()"></button>
+      </div>
+      
+      <!-- Body -->
+      <div class="modal-body p-4">
+        <div class="row g-4">
+          
+          <!-- Tipo de documento -->
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-id-card me-1 text-primary"></i>Tipo de Documento
+            </label>
+            <select class="form-select form-select-lg" [(ngModel)]="nuevoCliente.tipo_documento">
+              <option value="cedula">Cedula de Identidad</option>
+              <option value="ruc">RUC</option>
+              <option value="ninguno">Sin documento (Consumidor Final)</option>
+            </select>
+          </div>
+
+          <!-- Numero de documento -->
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-hashtag me-1 text-primary"></i>Numero de Documento
+              <span class="text-danger" *ngIf="nuevoCliente.tipo_documento !== 'ninguno'">*</span>
+            </label>
+            <input 
+              type="text" 
+              class="form-control form-control-lg" 
+              [(ngModel)]="nuevoCliente.numero_documento"
+              [disabled]="nuevoCliente.tipo_documento === 'ninguno'"
+              [placeholder]="nuevoCliente.tipo_documento === 'ruc' ? 'Ej: 1234567-8' : 'Numero de cedula'">
+            <small class="text-muted" *ngIf="nuevoCliente.tipo_documento === 'ninguno'">
+              No se requiere documento para Consumidor Final
+            </small>
+          </div>
+
+          <!-- Nombre -->
+          <div class="col-12">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-user me-1 text-primary"></i>Nombre / Razon Social
+              <span class="text-danger">*</span>
+            </label>
+            <input 
+              type="text" 
+              class="form-control form-control-lg" 
+              [(ngModel)]="nuevoCliente.nombre"
+              placeholder="Nombre completo o razon social">
+          </div>
+
+          <!-- Email -->
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-envelope me-1 text-primary"></i>Email
+            </label>
+            <input 
+              type="email" 
+              class="form-control" 
+              [(ngModel)]="nuevoCliente.email"
+              placeholder="correo@ejemplo.com">
+          </div>
+
+          <!-- Telefono -->
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-phone me-1 text-primary"></i>Telefono
+            </label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="nuevoCliente.telefono"
+              placeholder="0981 123 456">
+          </div>
+
+          <!-- Direccion -->
+          <div class="col-12">
+            <label class="form-label fw-semibold">
+              <i class="fas fa-map-marker-alt me-1 text-primary"></i>Direccion
+            </label>
+            <textarea 
+              class="form-control" 
+              [(ngModel)]="nuevoCliente.direccion"
+              rows="2"
+              placeholder="Direccion completa del cliente"></textarea>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-outline-secondary btn-lg" (click)="cerrarModal()">
+          <i class="fas fa-times me-2"></i>Cancelar
+        </button>
+        <button type="button" class="btn btn-lg" 
+                [ngClass]="esEdicion ? 'btn-warning' : 'btn-success'"
+                (click)="guardarCliente()"
+                [disabled]="guardando">
+          <span *ngIf="guardando" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!guardando" class="fas fa-save me-2"></i>
+          {{ esEdicion ? 'Actualizar' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+--------------------------------------------------------------------------------
+3.5 CREAR ARCHIVO: src/app/clientes.component.scss
+--------------------------------------------------------------------------------
+
+CONTENIDO COMPLETO:
+
+/* ============================================
+   ESTILOS COMPONENTE CLIENTES - PROFESIONAL
+   ============================================ */
+
+/* Filas de la tabla con efecto hover */
+.cliente-row {
+  transition: all 0.2s ease;
+}
+
+.cliente-row:hover {
+  background-color: #e3f2fd !important;
+  transform: scale(1.002);
+}
+
+/* Modal backdrop y estilos */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+}
+
+.modal {
+  z-index: 1050;
+}
+
+.modal-content {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.modal-header {
+  border-bottom: none;
+}
+
+.modal-footer {
+  border-top: none;
+}
+
+/* Badges personalizados */
+.badge {
+  font-weight: 500;
+}
+
+/* Botones de accion */
+.btn-group-sm .btn {
+  padding: 0.35rem 0.6rem;
+}
+
+/* Card headers */
+.card-header {
+  font-weight: 600;
+}
+
+/* Paginacion */
+.pagination .page-link {
+  cursor: pointer;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+
+--------------------------------------------------------------------------------
+3.6 AGREGAR EN: src/app/app.routes.ts (ruta de clientes)
+--------------------------------------------------------------------------------
+
+AGREGAR import:
+
+import { ClientesComponent } from './clientes.component';
+
+AGREGAR en el array de rutas:
+
+  { path: 'clientes', component: ClientesComponent, canActivate: [AuthGuard] },
+
+
+--------------------------------------------------------------------------------
+3.7 MODIFICAR: src/app/app.component.html (menu lateral)
+--------------------------------------------------------------------------------
+
+BUSCAR la seccion del menu lateral donde estan los links de navegacion.
+AGREGAR despues del link de Proveedores:
+
+            <a class="nav-link" (click)="goToClientes()" style="cursor:pointer;">
+              <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+              Clientes
+            </a>
+
+
+--------------------------------------------------------------------------------
+3.8 MODIFICAR: src/app/app.component.ts (metodo navegacion)
+--------------------------------------------------------------------------------
+
+AGREGAR el metodo en la clase:
+
+  goToClientes() {
+    this.updateUsername();
+    this.router.navigate(['/clientes']);
+  }
+
+
+================================================================================
+================================================================================
+TAREA 4: AUTOCOMPLETADO EN FACTURACION
+================================================================================
+================================================================================
+
+
+--------------------------------------------------------------------------------
+4.1 MODIFICAR: src/app/facturacion.component.ts
+--------------------------------------------------------------------------------
+
+AGREGAR imports:
+
+import { ClienteService } from './cliente.service';
+import { Cliente, BusquedaClienteResponse } from './cliente.model';
+
+AGREGAR en el constructor:
+
+private clienteService: ClienteService
+
+AGREGAR variables en la clase:
+
+  // Autocompletado de cliente
+  buscandoCliente = false;
+  clienteEncontrado: Cliente | null = null;
+  clienteEsNuevo = false;
+  guardarClienteAutomatico = false;
+
+AGREGAR metodos:
+
+  // Buscar cliente por documento (llamar en blur del input)
+  buscarClientePorDocumento() {
+    const documento = this.nuevaFactura.numero_documento?.trim();
+    
+    if (!documento || documento.length < 3) {
+      this.clienteEncontrado = null;
+      this.clienteEsNuevo = false;
+      return;
+    }
+    
+    if (this.nuevaFactura.tipo_documento === 'ninguno') {
+      return;
+    }
+    
+    this.buscandoCliente = true;
+    
+    this.clienteService.buscarPorDocumento(documento).subscribe({
+      next: (response: BusquedaClienteResponse) => {
+        this.buscandoCliente = false;
+        
+        if (response.encontrado && response.cliente) {
+          this.clienteEncontrado = response.cliente;
+          this.clienteEsNuevo = false;
+          this.autocompletarDatosCliente(response.cliente);
+        } else {
+          this.clienteEncontrado = null;
+          this.clienteEsNuevo = true;
+        }
+      },
+      error: () => {
+        this.buscandoCliente = false;
+      }
+    });
+  }
+
+  autocompletarDatosCliente(cliente: Cliente) {
+    this.nuevaFactura.nombre_cliente = cliente.nombre;
+    this.nuevaFactura.email_cliente = cliente.email || '';
+    this.nuevaFactura.telefono_cliente = cliente.telefono || '';
+    this.nuevaFactura.direccion_cliente = cliente.direccion || '';
+  }
+
+  limpiarDatosCliente() {
+    this.clienteEncontrado = null;
+    this.clienteEsNuevo = false;
+    this.nuevaFactura.nombre_cliente = '';
+    this.nuevaFactura.email_cliente = '';
+    this.nuevaFactura.telefono_cliente = '';
+    this.nuevaFactura.direccion_cliente = '';
+  }
+
+  async guardarClienteNuevo() {
+    if (!this.clienteEsNuevo || !this.guardarClienteAutomatico) return;
+    
+    const datosCliente = {
+      tipo_documento: this.nuevaFactura.tipo_documento,
+      numero_documento: this.nuevaFactura.numero_documento,
+      nombre: this.nuevaFactura.nombre_cliente,
+      email: this.nuevaFactura.email_cliente || null,
+      telefono: this.nuevaFactura.telefono_cliente || null,
+      direccion: this.nuevaFactura.direccion_cliente || null
+    };
+    
+    try {
+      await this.clienteService.crearDesdeFactura(datosCliente).toPromise();
+      console.log('Cliente guardado automaticamente');
+    } catch (error) {
+      console.warn('No se pudo guardar el cliente:', error);
+    }
+  }
+
+MODIFICAR el metodo crearFactura para guardar cliente:
+(Agregar despues de que la factura se crea exitosamente)
+
+      // Guardar cliente nuevo si corresponde
+      await this.guardarClienteNuevo();
+
+
+--------------------------------------------------------------------------------
+4.2 MODIFICAR: src/app/facturacion.component.html (seccion cliente)
+--------------------------------------------------------------------------------
+
+REEMPLAZAR la seccion de datos del cliente con este codigo mejorado:
+
+        <!-- DATOS DEL CLIENTE -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <h6 class="text-primary border-bottom pb-2 mb-3">
+              <i class="bi bi-person"></i> Datos del Cliente
+              
+              <!-- Indicadores de estado -->
+              <span *ngIf="buscandoCliente" class="ms-2">
+                <span class="spinner-border spinner-border-sm text-primary"></span>
+              </span>
+              <span *ngIf="clienteEncontrado" class="badge bg-success ms-2">
+                <i class="fas fa-check-circle"></i> Cliente registrado
+              </span>
+              <span *ngIf="clienteEsNuevo && nuevaFactura.numero_documento" class="badge bg-warning text-dark ms-2">
+                <i class="fas fa-user-plus"></i> Cliente nuevo
+              </span>
+            </h6>
+          </div>
+          
+          <div class="col-md-3">
+            <label class="form-label">Tipo de Documento:</label>
+            <select 
+              class="form-select" 
+              [(ngModel)]="nuevaFactura.tipo_documento" 
+              name="tipoDocumento"
+              (change)="limpiarDatosCliente()">
+              <option value="cedula">Cedula</option>
+              <option value="ruc">RUC</option>
+              <option value="ninguno">Consumidor Final</option>
+            </select>
+          </div>
+          
+          <div class="col-md-3">
+            <label class="form-label">
+              Nro. Documento:
+              <span class="text-danger" *ngIf="nuevaFactura.tipo_documento !== 'ninguno'">*</span>
+            </label>
+            <div class="input-group">
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="nuevaFactura.numero_documento" 
+                name="numeroDocumento"
+                [disabled]="nuevaFactura.tipo_documento === 'ninguno'"
+                [class.is-valid]="clienteEncontrado"
+                [placeholder]="nuevaFactura.tipo_documento === 'ruc' ? '1234567-8' : 'Cedula'"
+                (blur)="buscarClientePorDocumento()"
+                (keyup.enter)="buscarClientePorDocumento()">
+              <button 
+                class="btn btn-outline-primary" 
+                type="button" 
+                (click)="buscarClientePorDocumento()"
+                [disabled]="nuevaFactura.tipo_documento === 'ninguno'">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <label class="form-label">Nombre: <span class="text-danger">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="nuevaFactura.nombre_cliente" 
+              name="nombreCliente"
+              [class.is-valid]="clienteEncontrado"
+              placeholder="Nombre del cliente">
+          </div>
+          
+          <!-- Fila adicional para datos de contacto -->
+          <div class="col-md-4 mt-3">
+            <label class="form-label">Telefono:</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="nuevaFactura.telefono_cliente" 
+              name="telefonoCliente"
+              placeholder="0981...">
+          </div>
+          
+          <div class="col-md-4 mt-3">
+            <label class="form-label">Email:</label>
+            <input 
+              type="email" 
+              class="form-control" 
+              [(ngModel)]="nuevaFactura.email_cliente" 
+              name="emailCliente"
+              placeholder="correo@ejemplo.com">
+          </div>
+          
+          <div class="col-md-4 mt-3">
+            <label class="form-label">Direccion:</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [(ngModel)]="nuevaFactura.direccion_cliente" 
+              name="direccionCliente"
+              placeholder="Direccion">
+          </div>
+          
+          <!-- Opcion para guardar cliente nuevo -->
+          <div class="col-12 mt-3" *ngIf="clienteEsNuevo && nuevaFactura.tipo_documento !== 'ninguno' && nuevaFactura.numero_documento">
+            <div class="alert alert-info py-2 d-flex align-items-center mb-0">
+              <i class="fas fa-info-circle me-2 fs-5"></i>
+              <span class="me-3">Este cliente no esta registrado en el sistema.</span>
+              <div class="form-check">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  [(ngModel)]="guardarClienteAutomatico"
+                  id="guardarCliente"
+                  name="guardarCliente">
+                <label class="form-check-label fw-semibold" for="guardarCliente">
+                  Guardar en base de datos al facturar
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+================================================================================
+================================================================================
+TAREA 5: ACTUALIZAR API SERVICE (DROPDOWNS)
+================================================================================
+================================================================================
+
+
+--------------------------------------------------------------------------------
+5.1 AGREGAR EN: src/app/api.service.ts (metodos dropdown)
+--------------------------------------------------------------------------------
+
+AGREGAR estos metodos en ApiService:
+
+  // Obtener TODOS los productos para dropdowns (sin paginacion)
+  getProductosDropdown(): Observable<any[]> {
+    return this.http.get<any[]>('/api/productos/dropdown/');
+  }
+  
+  // Obtener TODOS los proveedores para dropdowns
+  getProveedoresDropdown(): Observable<any[]> {
+    return this.http.get<any[]>('/api/proveedores/dropdown/');
+  }
+
+
+--------------------------------------------------------------------------------
+5.2 MODIFICAR: ordenes-compra.component.ts (usar dropdown)
+--------------------------------------------------------------------------------
+
+BUSCAR donde se cargan los productos (metodo cargarProductos o similar).
+CAMBIAR para usar el endpoint dropdown:
+
+  cargarProductos() {
+    this.api.getProductosDropdown().subscribe({
+      next: (productos: any[]) => {
+        this.productos = productos;
+        console.log(`${productos.length} productos cargados`);
+      },
+      error: (error) => {
+        console.error('Error al cargar productos:', error);
+      }
+    });
+  }
+
+
+--------------------------------------------------------------------------------
+5.3 MODIFICAR: facturacion.component.ts (usar dropdown)
+--------------------------------------------------------------------------------
+
+BUSCAR donde se cargan los productos para el selector.
+CAMBIAR para usar el endpoint dropdown:
+
+  cargarProductos() {
+    this.api.getProductosDropdown().subscribe({
+      next: (productos: any[]) => {
+        this.productos = productos;
+        this.productosFiltrados = [...productos];
+      },
+      error: (error) => {
+        console.error('Error:', error);
+      }
+    });
+  }
+
+
+================================================================================
+================================================================================
+ORDEN DE EJECUCION
+================================================================================
+================================================================================
+
+BACKEND:
+1. Crear inventario/pagination.py
+2. Modificar settings.py (paginacion)
+3. Modificar views.py (endpoints dropdown + ClienteViewSet)
+4. Modificar serializers.py (ClienteSerializer)
+5. Modificar models.py (modelo Cliente)
+6. Modificar urls.py (registrar rutas)
+7. Ejecutar migraciones:
+   docker exec -it ferreteria-api python manage.py makemigrations
+   docker exec -it ferreteria-api python manage.py migrate
+
+FRONTEND:
+8. Crear cliente.model.ts
+9. Crear cliente.service.ts
+10. Crear clientes.component.ts
+11. Crear clientes.component.html
+12. Crear clientes.component.scss
+13. Modificar app.routes.ts
+14. Modificar app.component.html (menu)
+15. Modificar app.component.ts (navegacion)
+16. Modificar api.service.ts (dropdowns)
+17. Modificar facturacion.component.ts (autocompletado)
+18. Modificar facturacion.component.html (UI autocompletado)
+19. Modificar ordenes-compra.component.ts (usar dropdown)
+
+REBUILD:
+20. docker-compose up -d --build
+
+
+================================================================================
+VERIFICACION FINAL
+================================================================================
+
+[  ] Dropdown de productos muestra TODOS los productos (no solo 10)
+[  ] Modulo Clientes aparece en el menu lateral
+[  ] CRUD de clientes funciona (crear, editar, eliminar, activar/desactivar)
+[  ] En facturacion, al escribir RUC/CI se busca automaticamente
+[  ] Si el cliente existe, se autocompletan los datos
+[  ] Si el cliente NO existe, aparece badge "Cliente nuevo"
+[  ] Opcion "Guardar en base de datos" aparece para clientes nuevos
+[  ] Consumidor Final (sin documento) funciona sin validaciones
+
+
+================================================================================
+FIN DEL PLAN V3 - GESTION DE CLIENTES + PAGINACION
+================================================================================

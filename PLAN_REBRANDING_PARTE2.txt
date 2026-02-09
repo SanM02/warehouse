@@ -1,0 +1,226 @@
+================================================================================
+PLAN DE REBRANDING PARTE 2 - CORRECCIONES VISUALES
+================================================================================
+Para: Claude Sonnet 4.5 (Programador)
+De: Arquitecto Opus (DevOps Senior)
+Fecha: 14 de diciembre de 2025
+================================================================================
+
+DIAGNOSTICO PREVIO
+================================================================================
+
+Problemas detectados:
+1. Favicon no carga - Angular busca en "public/" pero imagen esta en "src/assets/"
+2. Vista de Productos tiene textos boilerplate de la plantilla SB Admin
+3. Falta configurar dominio personalizado
+
+Archivos afectados:
+- angular.json (configuracion de assets)
+- tables.component.html (vista de productos)
+- Archivo hosts de Windows (dominio local)
+
+
+================================================================================
+TAREA 1: CORREGIR FAVICON (angular.json)
+================================================================================
+
+OPCION A (RECOMENDADA): Modificar angular.json para incluir src/assets
+-------------------------------------------------------------------------
+
+Archivo: cabravietnamirachamsinpeladofrontend/angular.json
+
+UBICAR LINEAS 27-31 (seccion "assets"):
+
+CODIGO ACTUAL:
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
+
+CAMBIAR A:
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              },
+              {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "/assets"
+              }
+            ],
+
+
+OPCION B (ALTERNATIVA): Mover el favicon a public/
+--------------------------------------------------
+Si prefieres no modificar angular.json:
+- Copiar src/assets/favicon.png a public/favicon.png
+- Actualizar index.html para usar href="favicon.png" en vez de "assets/favicon.png"
+
+NOTA: Recomiendo OPCION A porque es mas estandar y permite usar src/assets para
+futuras imagenes sin problemas.
+
+
+================================================================================
+TAREA 2: LIMPIAR VISTA DE PRODUCTOS (tables.component.html)
+================================================================================
+
+Archivo: cabravietnamirachamsinpeladofrontend/src/app/tables/tables.component.html
+
+
+CAMBIO 2.1: Titulo principal (Linea 1)
+--------------------------------------
+ACTUAL:
+<h1 class="mt-4">Tables</h1>
+
+CAMBIAR A:
+<h1 class="mt-4">Inventario de Productos</h1>
+
+
+CAMBIO 2.2: Breadcrumbs (Lineas 2-5)
+------------------------------------
+ACTUAL:
+<ol class="breadcrumb mb-4">
+  <li class="breadcrumb-item"><a routerLink="/">Dashboard</a></li>
+  <li class="breadcrumb-item active">Tables</li>
+</ol>
+
+CAMBIAR A:
+<ol class="breadcrumb mb-4">
+  <li class="breadcrumb-item"><a routerLink="/">Inicio</a></li>
+  <li class="breadcrumb-item active">Inventario</li>
+</ol>
+
+
+CAMBIO 2.3: ELIMINAR card de documentacion (Lineas 6-11)
+--------------------------------------------------------
+ELIMINAR COMPLETAMENTE ESTAS LINEAS:
+<div class="card mb-4">
+  <div class="card-body">
+    DataTables is a third party plugin that is used to generate the demo table below. For more information about DataTables, please visit the
+    <a target="_blank" href="https://datatables.net/">official DataTables documentation</a>.
+  </div>
+</div>
+
+
+CAMBIO 2.4: Titulo del card de la tabla (Lineas 14-16, ahora 8-10 despues de eliminar)
+--------------------------------------------------------------------------------------
+ACTUAL:
+  <div class="card-header">
+    <i class="fas fa-table me-1"></i>
+    DataTable Example
+  </div>
+
+CAMBIAR A:
+  <div class="card-header">
+    <i class="fas fa-table me-1"></i>
+    Listado de Articulos
+  </div>
+
+
+================================================================================
+TAREA 3: RECORDATORIO - ARCHIVO HOSTS (Windows)
+================================================================================
+
+El usuario debe configurar manualmente el archivo hosts de Windows.
+
+Ubicacion: C:\Windows\System32\drivers\etc\hosts
+
+Agregar linea:
+127.0.0.1    ferreteria-jg.local
+
+Instrucciones completas en: PLAN_REBRANDING_JG.txt
+
+
+================================================================================
+RESUMEN DE EDICIONES PARA SONNET
+================================================================================
+
+ARCHIVO 1: angular.json
+-----------------------
+Lineas: 27-31
+Accion: Agregar src/assets al array de assets
+
+ARCHIVO 2: tables.component.html  
+---------------------------------
+Linea 1: "Tables" -> "Inventario de Productos"
+Lineas 2-5: Traducir breadcrumbs (Dashboard->Inicio, Tables->Inventario)
+Lineas 6-11: ELIMINAR completamente (card de documentacion DataTables)
+Lineas 14-16: "DataTable Example" -> "Listado de Articulos"
+
+
+================================================================================
+CODIGO FINAL ESPERADO - tables.component.html (PRIMERAS 20 LINEAS)
+================================================================================
+
+Despues de aplicar los cambios, el archivo debe empezar asi:
+
+<h1 class="mt-4">Inventario de Productos</h1>
+<ol class="breadcrumb mb-4">
+  <li class="breadcrumb-item"><a routerLink="/">Inicio</a></li>
+  <li class="breadcrumb-item active">Inventario</li>
+</ol>
+<div class="card mb-4">
+  <div class="card-header">
+    <i class="fas fa-table me-1"></i>
+    Listado de Articulos
+  </div>
+  <div class="card-body">
+    <div class="row mb-3">
+      ... (resto del contenido sin cambios)
+
+
+================================================================================
+ORDEN DE EJECUCION
+================================================================================
+
+1. Editar angular.json (agregar src/assets)
+2. Editar tables.component.html (4 cambios)
+3. Reconstruir frontend:
+   
+   docker-compose up -d --build frontend
+
+4. Limpiar cache del navegador (Ctrl+Shift+R)
+5. Verificar:
+   - Favicon debe aparecer en la pestana
+   - Vista de productos debe mostrar titulos en espanol
+   - No debe aparecer texto sobre "DataTables documentation"
+
+
+================================================================================
+VERIFICACION FINAL
+================================================================================
+
+Despues de aplicar cambios, verificar:
+
+[  ] Favicon carga correctamente en la pestana del navegador
+[  ] Titulo de pagina dice "Inventario de Productos"
+[  ] Breadcrumb dice "Inicio > Inventario"
+[  ] NO aparece el card con texto sobre DataTables
+[  ] Card de la tabla dice "Listado de Articulos"
+[  ] La tabla de productos sigue funcionando normalmente
+
+
+================================================================================
+NOTAS TECNICAS
+================================================================================
+
+1. El favicon actual en public/favicon.ico es el default de Angular.
+   Despues de configurar src/assets, el de assets/favicon.png tendra prioridad
+   si index.html lo referencia correctamente.
+
+2. Los cambios en angular.json requieren rebuild completo del frontend.
+
+3. Los cambios en HTML son solo visuales, no afectan la logica del componente.
+
+4. Si el favicon sigue sin cargar despues del rebuild:
+   - Verificar que index.html tiene: <link rel="icon" type="image/png" href="assets/favicon.png">
+   - Limpiar cache del navegador
+   - Verificar que el archivo existe en src/assets/favicon.png
+
+
+================================================================================
+FIN DEL PLAN PARTE 2
+================================================================================

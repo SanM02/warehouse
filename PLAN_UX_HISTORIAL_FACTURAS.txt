@@ -1,0 +1,564 @@
+================================================================================
+PLAN DE RENOVACION UX/UI - MODULO HISTORIAL DE FACTURAS
+================================================================================
+Para: Claude Sonnet 4.5 (Programador)
+De: Arquitecto Opus (DevOps Senior - 1000 años de experiencia)
+Fecha: 14 de diciembre de 2025
+================================================================================
+
+DIAGNOSTICO DEL ESTADO ACTUAL
+================================================================================
+
+El backend (FacturaSerializer) envia estos campos:
+- id, numero_factura, fecha
+- tipo_documento, numero_documento (RUC o Cedula)
+- nombre_cliente, email_cliente, telefono_cliente, direccion_cliente
+- subtotal, descuento_total, impuesto_total, total
+- usuario, observaciones
+- detalles[] (producto, cantidad, precio_unitario, subtotal)
+
+El frontend actual SOLO muestra:
+- id, fecha, nombre_cliente, total, usuario
+- Modal basico sin desglose de impuestos ni datos del cliente
+
+PROBLEMA: Se desperdicia informacion valiosa que el usuario necesita ver.
+
+
+================================================================================
+ARCHIVOS A MODIFICAR
+================================================================================
+
+1. historial-facturas.component.html  -> REESCRIBIR COMPLETO
+2. historial-facturas.component.scss  -> REESCRIBIR COMPLETO
+3. historial-facturas.component.ts    -> AGREGAR metodo para imprimir
+
+
+================================================================================
+ARCHIVO 1: historial-facturas.component.html (COMPLETO)
+================================================================================
+
+REEMPLAZAR TODO EL CONTENIDO CON:
+
+<!-- ============================================ -->
+<!-- ENCABEZADO DE PAGINA -->
+<!-- ============================================ -->
+<div class="container-fluid px-4">
+  <h1 class="mt-4">
+    <i class="fas fa-file-invoice me-2"></i>Historial de Facturas
+  </h1>
+  <ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a routerLink="/">Inicio</a></li>
+    <li class="breadcrumb-item active">Historial de Facturas</li>
+  </ol>
+
+  <!-- ============================================ -->
+  <!-- FILTROS -->
+  <!-- ============================================ -->
+  <div class="card mb-4">
+    <div class="card-header bg-light">
+      <i class="fas fa-filter me-1"></i> Filtros de Busqueda
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Buscar por cliente</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input class="form-control" placeholder="Nombre o documento..." [(ngModel)]="filtroCliente">
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Fecha desde</label>
+          <input class="form-control" type="date" [(ngModel)]="filtroFecha">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Resultados</label>
+          <div class="form-control-plaintext">
+            <span class="badge bg-primary fs-6">{{ facturasFiltradas.length }} facturas</span>
+          </div>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button class="btn btn-outline-secondary w-100" (click)="limpiarFiltros()">
+            <i class="fas fa-times me-1"></i> Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- TABLA PRINCIPAL DE FACTURAS -->
+  <!-- ============================================ -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <i class="fas fa-table me-1"></i> Listado de Facturas
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th class="text-center" style="width: 100px;">Nro. Factura</th>
+              <th style="width: 120px;">Fecha</th>
+              <th>Cliente</th>
+              <th class="text-center" style="width: 120px;">Documento</th>
+              <th class="text-end" style="width: 130px;">Total</th>
+              <th class="text-center" style="width: 100px;">Usuario</th>
+              <th class="text-center" style="width: 120px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let f of facturasFiltradas" class="factura-row">
+              <td class="text-center">
+                <span class="badge bg-secondary fs-6">#{{ f.numero_factura || f.id }}</span>
+              </td>
+              <td>
+                <i class="fas fa-calendar-alt text-muted me-1"></i>
+                {{ f.fecha | date:'dd/MM/yyyy' }}
+                <br>
+                <small class="text-muted">{{ f.fecha | date:'HH:mm' }} hs</small>
+              </td>
+              <td>
+                <strong>{{ f.nombre_cliente || f.cliente || 'Consumidor Final' }}</strong>
+                <br>
+                <small class="text-muted" *ngIf="f.telefono_cliente">
+                  <i class="fas fa-phone me-1"></i>{{ f.telefono_cliente }}
+                </small>
+              </td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="f.tipo_documento === 'ruc' ? 'bg-info' : 'bg-warning text-dark'">
+                  {{ f.tipo_documento === 'ruc' ? 'RUC' : 'CI' }}
+                </span>
+                <br>
+                <small>{{ f.numero_documento || '-' }}</small>
+              </td>
+              <td class="text-end">
+                <span class="fw-bold text-success fs-5">₲{{ f.total | number:'1.0-0' }}</span>
+              </td>
+              <td class="text-center">
+                <small class="text-muted">{{ f.usuario?.username || '-' }}</small>
+              </td>
+              <td class="text-center">
+                <button class="btn btn-primary btn-sm" (click)="verDetalles(f)" title="Ver detalle completo">
+                  <i class="fas fa-eye me-1"></i> Ver
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="facturasFiltradas.length === 0">
+              <td colspan="7" class="text-center text-muted py-4">
+                <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                No se encontraron facturas con los filtros aplicados
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL DE DETALLE DE FACTURA (PROFESIONAL) -->
+<!-- ============================================ -->
+<div *ngIf="facturaSeleccionada" class="modal-backdrop fade show"></div>
+<div *ngIf="facturaSeleccionada" class="modal fade show d-block" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content factura-modal">
+      
+      <!-- ENCABEZADO DEL MODAL -->
+      <div class="modal-header bg-dark text-white">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-file-invoice fa-2x me-3"></i>
+          <div>
+            <h5 class="modal-title mb-0">Factura #{{ facturaSeleccionada.numero_factura || facturaSeleccionada.id }}</h5>
+            <small class="text-light">{{ facturaSeleccionada.fecha | date:'dd/MM/yyyy HH:mm' }}</small>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" (click)="cerrarDetalles()"></button>
+      </div>
+      
+      <!-- CUERPO DEL MODAL -->
+      <div class="modal-body p-4">
+        
+        <!-- SECCION: INFORMACION DE LA EMPRESA -->
+        <div class="row mb-4 pb-3 border-bottom">
+          <div class="col-md-6">
+            <h4 class="text-primary mb-1">
+              <i class="fas fa-store me-2"></i>Ferreteria J&G
+            </h4>
+            <small class="text-muted">Sistema de Gestion de Inventario</small>
+          </div>
+          <div class="col-md-6 text-md-end">
+            <span class="badge bg-success fs-6 px-3 py-2">
+              <i class="fas fa-check-circle me-1"></i> PAGADA
+            </span>
+          </div>
+        </div>
+
+        <!-- SECCION: DATOS DEL CLIENTE -->
+        <div class="card bg-light mb-4">
+          <div class="card-body">
+            <h6 class="card-subtitle mb-3 text-muted">
+              <i class="fas fa-user me-2"></i>DATOS DEL CLIENTE
+            </h6>
+            <div class="row">
+              <div class="col-md-6">
+                <p class="mb-2">
+                  <strong class="fs-5">{{ facturaSeleccionada.nombre_cliente || 'Consumidor Final' }}</strong>
+                </p>
+                <p class="mb-1" *ngIf="facturaSeleccionada.numero_documento">
+                  <span class="badge me-2" [ngClass]="facturaSeleccionada.tipo_documento === 'ruc' ? 'bg-info' : 'bg-warning text-dark'">
+                    {{ facturaSeleccionada.tipo_documento === 'ruc' ? 'RUC' : 'CI' }}
+                  </span>
+                  {{ facturaSeleccionada.numero_documento }}
+                </p>
+              </div>
+              <div class="col-md-6">
+                <p class="mb-1 text-muted" *ngIf="facturaSeleccionada.direccion_cliente">
+                  <i class="fas fa-map-marker-alt me-2 text-danger"></i>{{ facturaSeleccionada.direccion_cliente }}
+                </p>
+                <p class="mb-1 text-muted" *ngIf="facturaSeleccionada.telefono_cliente">
+                  <i class="fas fa-phone me-2 text-success"></i>{{ facturaSeleccionada.telefono_cliente }}
+                </p>
+                <p class="mb-1 text-muted" *ngIf="facturaSeleccionada.email_cliente">
+                  <i class="fas fa-envelope me-2 text-primary"></i>{{ facturaSeleccionada.email_cliente }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCION: TABLA DE PRODUCTOS -->
+        <h6 class="text-muted mb-3">
+          <i class="fas fa-shopping-cart me-2"></i>DETALLE DE PRODUCTOS
+        </h6>
+        <div class="table-responsive mb-4">
+          <table class="table table-bordered">
+            <thead class="table-secondary">
+              <tr>
+                <th style="width: 50px;" class="text-center">#</th>
+                <th>Producto</th>
+                <th class="text-center" style="width: 80px;">Cant.</th>
+                <th class="text-end" style="width: 120px;">P. Unitario</th>
+                <th class="text-end" style="width: 130px;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let d of facturaSeleccionada.detalles; let i = index">
+                <td class="text-center text-muted">{{ i + 1 }}</td>
+                <td>
+                  <strong>{{ d.producto_nombre || d.producto }}</strong>
+                  <br *ngIf="d.codigo_producto">
+                  <small class="text-muted" *ngIf="d.codigo_producto">Cod: {{ d.codigo_producto }}</small>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-light text-dark fs-6">{{ d.cantidad }}</span>
+                </td>
+                <td class="text-end">₲{{ d.precio_unitario | number:'1.0-0' }}</td>
+                <td class="text-end fw-bold">₲{{ d.subtotal | number:'1.0-0' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- SECCION: TOTALES -->
+        <div class="row">
+          <div class="col-md-6">
+            <!-- OBSERVACIONES -->
+            <div *ngIf="facturaSeleccionada.observaciones" class="card bg-warning bg-opacity-10 border-warning">
+              <div class="card-body py-2">
+                <h6 class="card-subtitle mb-2 text-warning">
+                  <i class="fas fa-sticky-note me-2"></i>OBSERVACIONES
+                </h6>
+                <p class="mb-0 small">{{ facturaSeleccionada.observaciones }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card bg-light">
+              <div class="card-body">
+                <table class="table table-borderless mb-0">
+                  <tbody>
+                    <tr>
+                      <td class="text-muted">Subtotal:</td>
+                      <td class="text-end">₲{{ facturaSeleccionada.subtotal | number:'1.0-0' }}</td>
+                    </tr>
+                    <tr *ngIf="facturaSeleccionada.descuento_total > 0">
+                      <td class="text-danger">Descuento:</td>
+                      <td class="text-end text-danger">- ₲{{ facturaSeleccionada.descuento_total | number:'1.0-0' }}</td>
+                    </tr>
+                    <tr>
+                      <td class="text-muted">IVA (10%):</td>
+                      <td class="text-end">₲{{ facturaSeleccionada.impuesto_total | number:'1.0-0' }}</td>
+                    </tr>
+                    <tr class="border-top">
+                      <td class="fs-5 fw-bold text-dark">TOTAL:</td>
+                      <td class="text-end fs-4 fw-bold text-success">₲{{ facturaSeleccionada.total | number:'1.0-0' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      
+      <!-- PIE DEL MODAL -->
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-outline-primary" (click)="imprimirFactura()">
+          <i class="fas fa-print me-2"></i>Imprimir
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="cerrarDetalles()">
+          <i class="fas fa-times me-2"></i>Cerrar
+        </button>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+
+================================================================================
+ARCHIVO 2: historial-facturas.component.scss (COMPLETO)
+================================================================================
+
+REEMPLAZAR TODO EL CONTENIDO CON:
+
+/* ============================================
+   ESTILOS HISTORIAL DE FACTURAS - PROFESIONAL
+   ============================================ */
+
+/* Backdrop del modal */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+}
+
+/* Modal principal */
+.modal {
+  z-index: 1050;
+}
+
+/* Estilo especial para el modal de factura */
+.factura-modal {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.factura-modal .modal-header {
+  border-bottom: none;
+  padding: 1.25rem 1.5rem;
+}
+
+.factura-modal .modal-body {
+  background: #fafafa;
+}
+
+.factura-modal .modal-footer {
+  border-top: none;
+  padding: 1rem 1.5rem;
+}
+
+/* Filas de la tabla principal con hover */
+.factura-row {
+  transition: all 0.2s ease;
+}
+
+.factura-row:hover {
+  background-color: #e8f4fc !important;
+  transform: scale(1.005);
+}
+
+/* Card de totales */
+.card.bg-light .table-borderless td {
+  padding: 0.5rem 0;
+}
+
+/* Tabla de productos en el modal */
+.table-bordered th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Badge de documento */
+.badge {
+  font-weight: 500;
+}
+
+/* Estilo para impresion */
+@media print {
+  .modal-footer {
+    display: none !important;
+  }
+  
+  .modal-backdrop {
+    display: none !important;
+  }
+  
+  .modal {
+    position: static !important;
+    display: block !important;
+  }
+  
+  .modal-dialog {
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+  
+  .modal-content {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .factura-modal .modal-body {
+    padding: 1rem;
+  }
+  
+  .table-responsive {
+    font-size: 0.85rem;
+  }
+}
+
+
+================================================================================
+ARCHIVO 3: historial-facturas.component.ts (MODIFICACIONES)
+================================================================================
+
+AGREGAR estos metodos al final de la clase (antes del cierre }):
+
+  // Limpiar filtros
+  limpiarFiltros() {
+    this.filtroCliente = '';
+    this.filtroFecha = '';
+  }
+
+  // Imprimir factura
+  imprimirFactura() {
+    window.print();
+  }
+
+
+TAMBIEN AGREGAR RouterLink al import si no esta:
+
+Cambiar linea de imports (aproximadamente linea 3):
+import { CommonModule } from '@angular/common';
+
+A:
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+
+Y agregar RouterLink al array imports del @Component:
+imports: [CommonModule, FormsModule, RouterLink],
+
+
+================================================================================
+RESUMEN DE CAMBIOS
+================================================================================
+
+| Archivo                              | Accion              | Lineas   |
+|--------------------------------------|---------------------|----------|
+| historial-facturas.component.html    | REESCRIBIR COMPLETO | ~200     |
+| historial-facturas.component.scss    | REESCRIBIR COMPLETO | ~90      |
+| historial-facturas.component.ts      | AGREGAR 2 metodos   | +10      |
+| historial-facturas.component.ts      | AGREGAR RouterLink  | +2       |
+
+
+================================================================================
+RESULTADO VISUAL ESPERADO
+================================================================================
+
+TABLA PRINCIPAL:
++------------+------------+------------------+----------+------------+--------+---------+
+| Nro.Fact   | Fecha      | Cliente          | Doc.     | Total      | User   | Accion  |
++------------+------------+------------------+----------+------------+--------+---------+
+| #00001     | 14/12/2025 | Juan Perez       | RUC      | Gs 150.000 | admin  | [Ver]   |
+|            | 10:30 hs   | Tel: 0981...     | 123456-7 |            |        |         |
++------------+------------+------------------+----------+------------+--------+---------+
+
+MODAL DE DETALLE:
++----------------------------------------------------------+
+| [X]  Factura #00001                          14/12/2025  |
++----------------------------------------------------------+
+| FERRETERIA J&G                              [PAGADA]     |
+|----------------------------------------------------------|
+| DATOS DEL CLIENTE                                        |
+| Juan Perez                                               |
+| [RUC] 123456-7                                           |
+| Direccion, Telefono, Email                               |
+|----------------------------------------------------------|
+| DETALLE DE PRODUCTOS                                     |
+| # | Producto        | Cant | P.Unit     | Subtotal      |
+| 1 | Martillo        |  2   | Gs 25.000  | Gs 50.000     |
+| 2 | Clavos 2"       |  5   | Gs 5.000   | Gs 25.000     |
+|----------------------------------------------------------|
+| OBSERVACIONES:          |  Subtotal:      Gs 75.000     |
+| (si hay)                |  Descuento:     Gs 0          |
+|                         |  IVA (10%):     Gs 7.500      |
+|                         |  TOTAL:         Gs 82.500     |
++----------------------------------------------------------+
+|                    [Imprimir]  [Cerrar]                  |
++----------------------------------------------------------+
+
+
+================================================================================
+ORDEN DE EJECUCION PARA SONNET
+================================================================================
+
+1. Abrir historial-facturas.component.html
+   - Seleccionar TODO el contenido
+   - Reemplazar con el HTML proporcionado arriba
+
+2. Abrir historial-facturas.component.scss
+   - Seleccionar TODO el contenido
+   - Reemplazar con el SCSS proporcionado arriba
+
+3. Abrir historial-facturas.component.ts
+   - Agregar import de RouterLink
+   - Agregar RouterLink al array de imports del decorador
+   - Agregar los 2 metodos: limpiarFiltros() e imprimirFactura()
+
+4. Reconstruir frontend:
+   docker-compose up -d --build frontend
+
+5. Probar en navegador:
+   - Ir a Historial de Facturas
+   - Verificar que la tabla se ve mejorada
+   - Click en "Ver" para abrir el modal
+   - Verificar que el modal muestra todos los datos
+   - Probar boton "Imprimir"
+
+
+================================================================================
+NOTAS TECNICAS
+================================================================================
+
+1. El modal usa la misma data de facturaSeleccionada que ya existe.
+   No se necesitan cambios en el backend.
+
+2. Los campos que pueden estar vacios (email, telefono, direccion)
+   usan *ngIf para ocultarse si no tienen valor.
+
+3. El descuento solo se muestra si es mayor a 0.
+
+4. Los estilos de impresion (@media print) ocultan el footer
+   y ajustan el modal para que se vea bien al imprimir.
+
+5. RouterLink se necesita para que funcione routerLink="/" en breadcrumbs.
+
+
+================================================================================
+FIN DEL PLAN - RENOVACION UX/UI HISTORIAL FACTURAS
+================================================================================

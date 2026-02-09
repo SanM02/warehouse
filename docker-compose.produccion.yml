@@ -1,0 +1,112 @@
+version: '3.8'
+
+# ==========================================
+# DOCKER COMPOSE - PRODUCCION (CLIENTE)
+# Sistema de Inventario - Ferreteria J&G
+# ==========================================
+
+services:
+  # ==========================================
+  # POSTGRESQL 15 - Base de Datos
+  # ==========================================
+  db:
+    image: postgres:15-alpine
+    container_name: ferreteria-db
+    restart: always
+    environment:
+      POSTGRES_DB: ferreteria_inventario
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ferreteria_jg_2025
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ferreteria_inventario"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - ferreteria-network
+
+  # ==========================================
+  # BACKEND - Django + Gunicorn
+  # ==========================================
+  backend:
+    image: ferreteria-backend:latest
+    container_name: ferreteria-api
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ferreteria_inventario
+      DB_USER: postgres
+      DB_PASSWORD: ferreteria_jg_2025
+      SECRET_KEY: ferreteria-jg-secret-key-produccion-2025
+      DEBUG: "False"
+      ALLOWED_HOSTS: localhost,127.0.0.1,backend,ferreteria-api
+      JWT_ACCESS_TOKEN_LIFETIME_HOURS: 8
+      JWT_REFRESH_TOKEN_LIFETIME_DAYS: 7
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend_static:/app/staticfiles
+      - backend_media:/app/mediafiles
+      - backend_logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    networks:
+      - ferreteria-network
+
+  # ==========================================
+  # FRONTEND - Nginx + Angular
+  # ==========================================
+  frontend:
+    image: ferreteria-frontend:latest
+    container_name: ferreteria-web
+    restart: always
+    ports:
+      - "80:80"
+      - "4200:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - ferreteria-network
+
+# ==========================================
+# VOLUMENES PERSISTENTES
+# ==========================================
+volumes:
+  postgres_data:
+    name: ferreteria_postgres_data
+  backend_static:
+    name: ferreteria_static
+  backend_media:
+    name: ferreteria_media
+  backend_logs:
+    name: ferreteria_logs
+
+# ==========================================
+# RED INTERNA
+# ==========================================
+networks:
+  ferreteria-network:
+    name: ferreteria-network
+    driver: bridge

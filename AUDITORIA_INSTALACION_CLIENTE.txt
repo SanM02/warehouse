@@ -1,0 +1,296 @@
+================================================================================
+     AUDITORIA DE COHERENCIA - INSTALACION EN PC CLIENTE
+     Sistema de Inventario - Ferreteria J&G
+     Documento Tecnico para Programador (Sonnet)
+================================================================================
+     Fecha: Diciembre 2025
+     Prioridad: ALTA - Sin estas correcciones la instalacion puede fallar
+================================================================================
+
+
+================================================================================
+                    PROBLEMA #1: docker-compose.produccion.yml
+================================================================================
+
+ARCHIVO: docker-compose.produccion.yml
+
+PROBLEMA:
+---------
+Verificar que NO tenga lineas "build:" porque en la PC del cliente
+NO existira el codigo fuente, solo las imagenes .tar pre-construidas.
+
+DEBE TENER (solo image:):
+-------------------------
+backend:
+    image: ferreteria-backend:latest
+    # SIN build:
+
+frontend:
+    image: ferreteria-frontend:latest
+    # SIN build:
+
+NO DEBE TENER:
+--------------
+backend:
+    build: ./cabravietnamirachamsinpeladobackend    # <-- ELIMINAR
+    image: ferreteria-backend:latest
+
+frontend:
+    build: ./cabravietnamirachamsinpeladofrontend   # <-- ELIMINAR
+    image: ferreteria-frontend:latest
+
+
+SOLUCION - CONTENIDO COMPLETO DE docker-compose.produccion.yml:
+---------------------------------------------------------------
+
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ferreteria-db
+    restart: always
+    environment:
+      POSTGRES_DB: ferreteria_inventario
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ferreteria_jg_2025
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ferreteria_inventario"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - ferreteria-network
+
+  backend:
+    image: ferreteria-backend:latest
+    container_name: ferreteria-api
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ferreteria_inventario
+      DB_USER: postgres
+      DB_PASSWORD: ferreteria_jg_2025
+      SECRET_KEY: django-prod-key-ferreteria-jg-2025
+      DEBUG: "False"
+      ALLOWED_HOSTS: localhost,127.0.0.1,ferreteria-api
+    volumes:
+      - backend_static:/app/staticfiles
+      - backend_media:/app/mediafiles
+      - backend_logs:/app/logs
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - ferreteria-network
+
+  frontend:
+    image: ferreteria-frontend:latest
+    container_name: ferreteria-web
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "4200:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - ferreteria-network
+
+volumes:
+  postgres_data:
+    name: ferreteria_postgres_data
+  backend_static:
+    name: ferreteria_static
+  backend_media:
+    name: ferreteria_media
+  backend_logs:
+    name: ferreteria_logs
+
+networks:
+  ferreteria-network:
+    name: ferreteria-network
+    driver: bridge
+
+
+================================================================================
+                    PROBLEMA #2: scripts/preparar-instalador.ps1
+================================================================================
+
+ARCHIVO: scripts/preparar-instalador.ps1
+
+PROBLEMA:
+---------
+Verificar que copie el archivo docker-compose.produccion.yml
+(no el docker-compose.yml de desarrollo)
+
+LINEA ~68 DEBE DECIR:
+---------------------
+Copy-Item "$PROJECT_ROOT\docker-compose.produccion.yml" "$Destino\sistema\docker-compose.yml" -Force
+
+NO DEBE DECIR:
+--------------
+Copy-Item "$PROJECT_ROOT\docker-compose.yml" "$Destino\sistema\" -Force
+
+
+================================================================================
+                    PROBLEMA #3: scripts/ferreteria/iniciar-sistema.ps1
+================================================================================
+
+ARCHIVO: scripts/ferreteria/iniciar-sistema.ps1
+
+PROBLEMA:
+---------
+Este script debe usar la ruta C:\SistemaFerreteria (donde se instala en cliente)
+NO debe tener rutas de desarrollo como C:\Users\San\Desktop\...
+
+CONTENIDO CORRECTO:
+-------------------
+
+# ==========================================
+# Script: Iniciar Sistema Ferreteria
+# Para: PC del cliente
+# ==========================================
+
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "   INICIANDO SISTEMA FERRETERIA J&G" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host ""
+
+$INSTALL_PATH = "C:\SistemaFerreteria"
+
+if (Test-Path $INSTALL_PATH) {
+    Set-Location $INSTALL_PATH
+} else {
+    Write-Host "[ERROR] No se encontro el sistema en $INSTALL_PATH" -ForegroundColor Red
+    pause
+    exit 1
+}
+
+Write-Host "[*] Levantando contenedores..." -ForegroundColor Yellow
+docker-compose up -d
+
+Start-Sleep -Seconds 5
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host ""
+    Write-Host "[OK] Sistema iniciado exitosamente" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "Accesos:" -ForegroundColor Cyan
+    Write-Host "   http://localhost:4200" -ForegroundColor White
+    Write-Host "   http://localhost (puerto 80)" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Usuario: admin" -ForegroundColor Cyan
+    Write-Host "Contrasena: admin123" -ForegroundColor Cyan
+    Write-Host ""
+    
+    Start-Process "http://localhost:4200"
+    
+    Write-Host "Estado de contenedores:" -ForegroundColor Cyan
+    docker-compose ps
+} else {
+    Write-Host "[ERROR] Error al iniciar el sistema" -ForegroundColor Red
+    Write-Host "Ver logs con: docker-compose logs" -ForegroundColor Yellow
+}
+
+Write-Host ""
+pause
+
+
+================================================================================
+                    PROBLEMA #4: CONSISTENCIA DE NOMBRES DE IMAGENES
+================================================================================
+
+VERIFICAR QUE COINCIDAN:
+
+En docker-compose.produccion.yml:
+---------------------------------
+image: ferreteria-backend:latest
+image: ferreteria-frontend:latest
+image: postgres:15-alpine
+
+En scripts/preparar-instalador.ps1 (exportacion):
+-------------------------------------------------
+docker save postgres:15-alpine -o "...\postgres.tar"
+docker save ferreteria-backend:latest -o "...\backend.tar"
+docker save ferreteria-frontend:latest -o "...\frontend.tar"
+
+En scripts/instalar-en-cliente.ps1 (importacion):
+-------------------------------------------------
+docker load -i "...\postgres.tar"
+docker load -i "...\backend.tar"
+docker load -i "...\frontend.tar"
+
+
+================================================================================
+                    CHECKLIST ANTES DE ENTREGAR AL CLIENTE
+================================================================================
+
+[ ] docker-compose.produccion.yml NO tiene "build:" en ningun servicio
+[ ] docker-compose.produccion.yml usa image: ferreteria-backend:latest
+[ ] docker-compose.produccion.yml usa image: ferreteria-frontend:latest
+[ ] preparar-instalador.ps1 copia docker-compose.produccion.yml
+[ ] iniciar-sistema.ps1 usa ruta C:\SistemaFerreteria
+[ ] Las imagenes Docker existen: ferreteria-backend:latest, ferreteria-frontend:latest
+[ ] Los archivos .tar se generan correctamente
+
+
+================================================================================
+                    PRUEBA RECOMENDADA (SIMULAR PC NUEVA)
+================================================================================
+
+# 1. Preparar paquete
+.\scripts\preparar-instalador.ps1 -Destino "C:\Users\San\Desktop\FerreteriaSistema_Instalador"
+
+# 2. Verificar contenido del paquete generado
+Get-ChildItem "C:\Users\San\Desktop\FerreteriaSistema_Instalador" -Recurse
+
+# 3. Verificar que docker-compose.yml NO tenga "build:"
+Get-Content "C:\Users\San\Desktop\FerreteriaSistema_Instalador\sistema\docker-compose.yml" | Select-String "build"
+# Debe devolver VACIO (nada)
+
+# 4. (OPCIONAL) Simular instalacion limpia
+# CUIDADO: Esto elimina las imagenes actuales
+# docker rmi ferreteria-backend:latest ferreteria-frontend:latest
+# Luego ejecutar INSTALAR.ps1 y verificar que funcione
+
+
+================================================================================
+                    RESUMEN DE ARCHIVOS A MODIFICAR
+================================================================================
+
+| Archivo                              | Accion                              |
+|--------------------------------------|-------------------------------------|
+| docker-compose.produccion.yml        | Verificar/quitar "build:"           |
+| scripts/preparar-instalador.ps1      | Verificar copia archivo correcto    |
+| scripts/ferreteria/iniciar-sistema.ps1| Verificar ruta C:\SistemaFerreteria |
+
+
+================================================================================
+                              FIN DEL DOCUMENTO
+================================================================================
+                    Preparado por: Arquitecto Opus 4.5
+                    Para: Programador Sonnet
+                    Sistema: Ferreteria J&G v2.0
+================================================================================
