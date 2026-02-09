@@ -30,67 +30,6 @@ interface Producto {
   styleUrls: ['./tables2.component.scss']
 })
 export class Tables2Component implements OnInit {
-  // Generador automático de colores basado en hash del nombre
-  private hashString(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return Math.abs(hash);
-  }
-
-  getCategoriaBadgeStyle(categoria: string): any {
-    if (!categoria) {
-      return {
-        'background': '#64748b',
-        'color': 'white',
-        'border': '3px solid #0f172a',
-        'font-weight': '700',
-        'letter-spacing': '1px',
-        'padding': '0.5rem 1rem',
-        'box-shadow': '4px 4px 0 rgba(0, 0, 0, 0.15)',
-        'display': 'inline-block',
-        'text-transform': 'uppercase',
-        'font-size': '0.75rem'
-      };
-    }
-
-    const hash = this.hashString(categoria);
-    
-    // Paleta de colores industriales
-    const colores = [
-      { bg: '#ff6b35', text: 'white' },      // Naranja industrial
-      { bg: '#fbbf24', text: '#0f172a' },    // Amarillo energía
-      { bg: '#1a365d', text: 'white' },      // Navy sólido
-      { bg: '#8b5cf6', text: 'white' },      // Púrpura
-      { bg: '#0ea5e9', text: 'white' },      // Azul agua
-      { bg: '#dc2626', text: 'white' },      // Rojo alerta
-      { bg: '#2d6a4f', text: 'white' },      // Verde industrial
-      { bg: '#84cc16', text: '#0f172a' },    // Verde natural
-      { bg: '#f59e0b', text: '#0f172a' },    // Ámbar
-      { bg: '#06b6d4', text: 'white' },      // Cyan
-      { bg: '#8b5a3c', text: 'white' },      // Marrón tierra
-      { bg: '#6366f1', text: 'white' }       // Índigo
-    ];
-
-    const colorSeleccionado = colores[hash % colores.length];
-
-    return {
-      'background': colorSeleccionado.bg,
-      'color': colorSeleccionado.text,
-      'border': '3px solid #0f172a',
-      'font-weight': '700',
-      'letter-spacing': '1px',
-      'padding': '0.5rem 1rem',
-      'box-shadow': '4px 4px 0 rgba(0, 0, 0, 0.15)',
-      'display': 'inline-block',
-      'text-transform': 'uppercase',
-      'font-size': '0.75rem'
-    };
-  }
-
   productos: Producto[] = [];
   search: string = '';
   page: number = 1;
@@ -312,5 +251,10 @@ export class Tables2Component implements OnInit {
         });
       }
     });
+  }
+
+  getCategoriaBadgeStyle(categoria: string): any {
+    // Método para estilos dinámicos del badge de categoría
+    return {};
   }
 }

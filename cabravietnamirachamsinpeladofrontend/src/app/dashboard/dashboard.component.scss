@@ -1,383 +1,46 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Work+Sans:wght@400;500;600&display=swap');
-
-// ==========================================
-// 🔧 INDUSTRIAL & CONFIABLE - Variables
-// ==========================================
-
-:root {
-  --industrial-navy: #1a365d;
-  --industrial-orange: #ff6b35;
-  --industrial-green: #2d6a4f;
-  --industrial-surface: #f4f5f7;
-  --industrial-steel: #64748b;
-  --industrial-dark: #0f172a;
-  --industrial-light: #f8fafc;
+.text-xs {
+  font-size: 0.7rem;
 }
-
-// ==========================================
-// 🏗️ Tipografía Industrial
-// ==========================================
-
-.container-fluid {
-  font-family: 'Work Sans', sans-serif;
-  background: linear-gradient(135deg, #f8fafc 0%, #f4f5f7 100%);
-  min-height: 100vh;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-// ==========================================
-// 📊 Stats Cards - Estilo Blueprint
-// ==========================================
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-  
-  @keyframes slideInStagger {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .stat-card {
-    position: relative;
-    background: white;
-    border: 3px solid var(--industrial-dark);
-    border-radius: 0;
-    padding: 1.5rem;
-    overflow: hidden;
-    animation: slideInStagger 0.4s ease-out backwards;
-    
-    &:nth-child(1) { animation-delay: 0.1s; }
-    &:nth-child(2) { animation-delay: 0.2s; }
-    &:nth-child(3) { animation-delay: 0.3s; }
-    &:nth-child(4) { animation-delay: 0.4s; }
-    
-    // Línea decorativa tipo blueprint - MÁS PROMINENTE
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 12px;
-      background: #64748b;
-      transition: height 0.3s ease;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    &:hover::before {
-      height: 16px;
-    }
-    
-    // Textura sutil
-    &::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      background-image: 
-        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.02) 2px, rgba(0,0,0,.02) 4px);
-      pointer-events: none;
-    }
-    
-    // Colores directos para cada tipo de card
-    &.accent-orange {
-      &::before { background: #ff6b35; }
-      .stat-value { color: #ff6b35; }
-      .stat-icon { color: #ff6b35; }
-    }
-    
-    &.accent-green {
-      &::before { background: #2d6a4f; }
-      .stat-value { color: #2d6a4f; }
-      .stat-icon { color: #2d6a4f; }
-    }
-    
-    &.accent-navy {
-      &::before { background: #1a365d; }
-      .stat-value { color: #1a365d; }
-      .stat-icon { color: #1a365d; }
-    }
-    
-    &.accent-steel {
-      &::before { background: #64748b; }
-      .stat-value { color: #64748b; }
-      .stat-icon { color: #64748b; }
-    }
-    
-    .stat-label {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: #64748b;
-      margin-bottom: 0.75rem;
-    }
-    
-    .stat-value {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 3.5rem;
-      font-weight: 800;
-      line-height: 1;
-      color: #1a365d;
-      margin-bottom: 0.5rem;
-      text-shadow: 2px 2px 0px rgba(0,0,0,0.05);
-      
-      &::before {
-        content: '₲';
-        font-size: 1.8rem;
-        opacity: 0.6;
-        margin-right: 0.25rem;
-      }
-      
-      &.no-currency::before {
-        content: '';
-        margin: 0;
-      }
-    }
-    
-    .stat-icon {
-      position: absolute;
-      bottom: 1rem;
-      right: 1rem;
-      font-size: 4rem;
-      color: #64748b;
-      opacity: 0.15;
-      transform: rotate(-15deg);
-      transition: all 0.3s ease;
-    }
-    
-    &:hover .stat-icon {
-      opacity: 0.25;
-      transform: rotate(-10deg) scale(1.05);
-    }
-  }
-}
-
-// ==========================================
-// 📦 Cards Principales - Metálicos
-// ==========================================
 
 .card {
-  border: 3px solid #0f172a;
-  border-radius: 0;
-  background: white;
-  box-shadow: 
-    8px 8px 0 rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255,255,255,0.8);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: slideInStagger 0.5s ease-out backwards;
-  
-  &:nth-of-type(odd) { animation-delay: 0.5s; }
-  &:nth-of-type(even) { animation-delay: 0.6s; }
-  
-  &:hover {
-    transform: translate(-4px, -4px);
-    box-shadow: 
-      12px 12px 0 rgba(0, 0, 0, 0.1),
-      inset 0 1px 0 rgba(255,255,255,0.8);
-  }
-  
-  .card-header {
-    background: #0f172a;
-    color: white;
-    border: none;
-    padding: 1rem 1.5rem;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    
-    i {
-      color: #ff6b35;
-      margin-right: 0.5rem;
-    }
-  }
-  
-  .card-body {
-    padding: 1.5rem;
-  }
+  transition: transform 0.2s ease-in-out;
 }
 
-// ==========================================
-// 📈 Display Numbers - Terminales
-// ==========================================
-
-.display-number {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: #1a365d;
-  position: relative;
-  display: inline-block;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -4px;
-    left: 0;
-    width: 50%;
-    height: 3px;
-    background: #ff6b35;
-  }
-  
-  &.success { color: #2d6a4f; }
-  &.warning { color: #ff6b35; }
-  &.info { color: #64748b; }
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
 
-// ==========================================
-// 📋 Lista de Productos - Industrial
-// ==========================================
-
-.list-group-item {
-  border: none;
-  border-left: 4px solid transparent;
-  border-bottom: 2px solid #f4f5f7;
-  padding: 1rem;
-  transition: all 0.15s ease;
-  
-  &:hover {
-    border-left-color: #ff6b35;
-    background: #f4f5f7;
-    transform: translateX(4px);
-  }
-  
-  strong {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #0f172a;
-  }
-  
-  .badge {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 700;
-    padding: 0.4rem 0.8rem;
-    border-radius: 0;
-    background: #2d6a4f !important;
-  }
+.fa-2x {
+  opacity: 0.3;
 }
 
-// ==========================================
-// 📊 Progress Bars - Precisión Industrial
-// ==========================================
-
-.progress {
-  height: 12px;
-  background: #f4f5f7;
-  border: 2px solid #0f172a;
-  border-radius: 0;
-  overflow: visible;
-  
-  .progress-bar {
-    background: #2d6a4f;
-    position: relative;
-    border-right: 3px solid #0f172a;
-    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    
-    &::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      right: -6px;
-      width: 10px;
-      height: 10px;
-      background: #ff6b35;
-      border: 2px solid #0f172a;
-      transform: translateY(-50%) rotate(45deg);
-    }
-  }
+.badge-success { 
+  background-color: #28a745 !important; 
 }
 
-// ==========================================
-// 🔖 Badges - Etiquetas Metálicas
-// ==========================================
-
-.badge {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700;
-  border-radius: 0;
-  padding: 0.4rem 0.8rem;
-  border: 2px solid currentColor;
-  
-  &.bg-success {
-    background: var(--industrial-green) !important;
-    color: white !important;
-  }
-  
-  &.bg-primary {
-    background: var(--industrial-navy) !important;
-    color: white !important;
-  }
+.badge-warning { 
+  background-color: #ffc107 !important; 
+  color: #212529 !important;
 }
 
-// ==========================================
-// 🍞 Breadcrumb - Esquema Industrial
-// ==========================================
+.badge-secondary { 
+  background-color: #6c757d !important; 
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+}
 
 .breadcrumb {
-  background: transparent;
+  background-color: transparent;
   padding: 0;
-  margin-bottom: 2rem;
-  
-  .breadcrumb-item {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: var(--industrial-steel);
-    
-    &.active {
-      color: var(--industrial-orange);
-    }
-    
-    &::before {
-      content: '›';
-      color: var(--industrial-steel);
-      font-weight: 700;
-    }
-  }
 }
 
-// ==========================================
-// 🎯 Título Principal
-// ==========================================
+.card-header {
+  font-weight: 600;
+}
 
-h1.mt-4 {
-  font-size: 2.5rem;
-  color: var(--industrial-dark);
-  margin-bottom: 0.5rem;
-  position: relative;
-  display: inline-block;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 0;
-    width: 80px;
-    height: 4px;
-    background: var(--industrial-orange);
-  }
+canvas {
+  max-height: 300px !important;
 }

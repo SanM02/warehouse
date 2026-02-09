@@ -1,72 +1,101 @@
 <div class="container-fluid px-4">
   <h1 class="mt-4">Dashboard Menu</h1>
   <ol class="breadcrumb mb-4">
-    <li class="breadcrumb-item active">Control de Ferretería</li>
+    <li class="breadcrumb-item active">Dashboard</li>
   </ol>
 
-  <!-- 🔧 Stats Cards - Estilo Industrial Blueprint -->
-  <div class="stats-grid" *ngIf="stats">
-    <div class="stat-card accent-orange">
-      <div class="stat-label">Ventas Hoy</div>
-      <div class="stat-value">{{ stats.ventas_hoy | number:'1.0-0' }}</div>
-      <div class="stat-icon">
-        <i class="fas fa-cash-register"></i>
+  <!-- Tarjetas de estadísticas -->
+  <div class="row" *ngIf="stats">
+    <div class="col-xl-3 col-md-6">
+      <div class="card bg-primary text-white mb-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <div class="text-xs font-weight-bold text-uppercase mb-1">Ventas Hoy</div>
+              <div class="h5 mb-0 font-weight-bold">{{ stats.ventas_hoy | number:'1.0-0' }}</div>
+            </div>
+            <div class="fa-2x">
+              <i class="fas fa-dollar-sign"></i>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    
-    <div class="stat-card accent-green">
-      <div class="stat-label">Ventas del Mes</div>
-      <div class="stat-value">{{ stats.ventas_mes | number:'1.0-0' }}</div>
-      <div class="stat-icon">
-        <i class="fas fa-chart-line"></i>
+    <div class="col-xl-3 col-md-6">
+      <div class="card bg-success text-white mb-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <div class="text-xs font-weight-bold text-uppercase mb-1">Ventas del Mes</div>
+              <div class="h5 mb-0 font-weight-bold">{{ stats.ventas_mes | number:'1.0-0' }}</div>
+            </div>
+            <div class="fa-2x">
+              <i class="fas fa-chart-line"></i>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    
-    <div class="stat-card accent-navy">
-      <div class="stat-label">Productos Vendidos Hoy</div>
-      <div class="stat-value no-currency">{{ stats.productos_vendidos_hoy }}</div>
-      <div class="stat-icon">
-        <i class="fas fa-boxes"></i>
+    <div class="col-xl-3 col-md-6">
+      <div class="card bg-info text-white mb-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <div class="text-xs font-weight-bold text-uppercase mb-1">Productos Vendidos Hoy</div>
+              <div class="h5 mb-0 font-weight-bold">{{ stats.productos_vendidos_hoy }}</div>
+            </div>
+            <div class="fa-2x">
+              <i class="fas fa-box"></i>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    
-    <div class="stat-card accent-steel">
-      <div class="stat-label">Clientes Únicos</div>
-      <div class="stat-value no-currency">{{ stats.clientes_unicos_mes }}</div>
-      <div class="stat-icon">
-        <i class="fas fa-users-cog"></i>
+    <div class="col-xl-3 col-md-6">
+      <div class="card bg-warning text-white mb-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <div class="text-xs font-weight-bold text-uppercase mb-1">Clientes Únicos</div>
+              <div class="h5 mb-0 font-weight-bold">{{ stats.clientes_unicos_mes }}</div>
+            </div>
+            <div class="fa-2x">
+              <i class="fas fa-users"></i>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- 🏗️ Información Principal - Cards Metálicos -->
+  <!-- Información principal -->
   <div class="row">
     <div class="col-xl-6">
       <div class="card mb-4">
         <div class="card-header">
-          <i class="fas fa-wrench"></i>
-          Resumen de Operaciones
+          <i class="fas fa-cash-register me-1"></i>
+          Resumen de Ventas
         </div>
         <div class="card-body">
-          <div class="row text-center mb-4">
+          <div class="row text-center">
             <div class="col-6">
-              <div class="display-number success">{{ ventasHoy || 0 | number:'1.0-0' }}</div>
-              <small class="text-muted" style="font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px;">Ventas Hoy</small>
+              <h3 class="text-success">{{ ventasHoy || 0 | number:'1.0-0' }}</h3>
+              <small class="text-muted">Ventas Hoy</small>
             </div>
             <div class="col-6">
-              <div class="display-number">{{ ventasMes || 0 | number:'1.0-0' }}</div>
-              <small class="text-muted" style="font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px;">Este Mes</small>
+              <h3 class="text-primary">{{ ventasMes || 0 | number:'1.0-0' }}</h3>
+              <small class="text-muted">Este Mes</small>
             </div>
           </div>
-          <hr style="border-top: 2px solid var(--industrial-dark); opacity: 0.2;">
-          <div class="row text-center mt-4">
+          <hr>
+          <div class="row text-center">
             <div class="col-6">
-              <div class="display-number info">{{ facturasDia || 0 }}</div>
-              <small class="text-muted" style="font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px;">Facturas Hoy</small>
+              <h4 class="text-info">{{ facturasDia || 0 }}</h4>
+              <small class="text-muted">Facturas Hoy</small>
             </div>
             <div class="col-6">
-              <div class="display-number warning">{{ promedioVenta || 0 | number:'1.0-0' }}</div>
-              <small class="text-muted" style="font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px;">Promedio Venta</small>
+              <h4 class="text-warning">{{ promedioVenta || 0 | number:'1.0-0' }}</h4>
+              <small class="text-muted">Promedio por Venta</small>
             </div>
           </div>
         </div>
@@ -75,7 +104,7 @@
     <div class="col-xl-6">
       <div class="card mb-4">
         <div class="card-header">
-          <i class="fas fa-tools"></i>
+          <i class="fas fa-box me-1"></i>
           Productos Destacados
         </div>
         <div class="card-body">
@@ -85,12 +114,12 @@
               <div>
                 <strong>{{ producto.nombre }}</strong>
                 <br>
-                <small class="text-muted" style="font-family: 'Work Sans', sans-serif;">{{ producto.marca }}</small>
+                <small class="text-muted">{{ producto.marca }}</small>
               </div>
               <div class="text-end">
-                <span class="badge bg-success">{{ producto.cantidad_vendida }} uds</span>
+                <span class="badge bg-success rounded-pill">{{ producto.cantidad_vendida }}</span>
                 <br>
-                <small style="font-family: 'Barlow Condensed', sans-serif; font-weight: 600; color: var(--industrial-green);">₲{{ producto.ingresos_totales | number:'1.0-0' }}</small>
+                <small class="text-muted">₲{{ producto.ingresos_totales | number:'1.0-0' }}</small>
               </div>
             </div>
           </div>
@@ -99,28 +128,27 @@
     </div>
   </div>
 
-  <!-- 🏭 Información Secundaria - Rendimiento Industrial -->
+  <!-- Información secundaria -->
   <div class="row">
     <div class="col-xl-6">
       <div class="card mb-4">
         <div class="card-header">
-          <i class="fas fa-industry"></i>
-          Marcas con Mayor Rendimiento
+          <i class="fas fa-tags me-1"></i>
+          Marcas Principales
         </div>
         <div class="card-body">
           <div class="row">
             <div class="col-12" *ngFor="let marca of marcas?.slice(0, 4); trackBy: trackByMarca">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; font-weight: 700; text-transform: uppercase; color: var(--industrial-dark);">{{ marca.marca }}</span>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold">{{ marca.marca }}</span>
                 <div>
-                  <span class="badge bg-primary me-2">{{ marca.productos_vendidos }} pzas</span>
-                  <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--industrial-green);">₲{{ marca.ingresos_totales | number:'1.0-0' }}</span>
+                  <span class="badge bg-primary me-2">{{ marca.productos_vendidos }} productos</span>
+                  <span class="text-success fw-bold">₲{{ marca.ingresos_totales | number:'1.0-0' }}</span>
                 </div>
               </div>
-              <div class="progress mb-3">
-                <div class="progress-bar" 
-                     [style.width.%]="(marca.ingresos_totales / maxIngresosMarca * 100)">
-                </div>
+              <div class="progress mb-3" style="height: 8px;">
+                <div class="progress-bar bg-success" 
+                     [style.width.%]="(marca.ingresos_totales / maxIngresosMarca) * 100"></div>
               </div>
             </div>
           </div>
@@ -130,28 +158,27 @@
     <div class="col-xl-6">
       <div class="card mb-4">
         <div class="card-header">
-          <i class="fas fa-warehouse"></i>
+          <i class="fas fa-warehouse me-1"></i>
           Estado de Inventario
         </div>
         <div class="card-body">
-          <div class="row text-center mb-4">
+          <div class="row text-center mb-3">
             <div class="col-4">
-              <div class="display-number success" style="font-size: 2rem;">{{ stockAlto || 0 }}</div>
-              <small class="text-muted" style="font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px;">Stock Alto</small>
+              <h5 class="text-success">{{ stockAlto || 0 }}</h5>
+              <small class="text-muted">Stock Alto</small>
             </div>
             <div class="col-4">
-              <div class="display-number warning" style="font-size: 2rem;">{{ stockMedio || 0 }}</div>
-              <small class="text-muted" style="font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px;">Stock Medio</small>
+              <h5 class="text-warning">{{ stockMedio || 0 }}</h5>
+              <small class="text-muted">Stock Medio</small>
             </div>
             <div class="col-4">
-              <div class="display-number" style="font-size: 2rem; color: #dc2626;">{{ stockBajo || 0 }}</div>
-              <small class="text-muted" style="font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px;">Stock Bajo</small>
+              <h5 class="text-danger">{{ stockBajo || 0 }}</h5>
+              <small class="text-muted">Stock Bajo</small>
             </div>
           </div>
-          <div *ngIf="(stockBajo || 0) > 0" style="background: #fef3c7; border: 3px solid #f59e0b; padding: 1rem; margin-top: 1rem;">
-            <i class="fas fa-exclamation-triangle" style="color: #f59e0b; margin-right: 0.5rem;"></i>
-            <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; color: #92400e;">Atención:</span>
-            <span style="font-family: 'Work Sans', sans-serif; color: #92400e;"> {{ stockBajo }} productos con stock bajo</span>
+          <div class="alert alert-warning" *ngIf="(stockBajo || 0) > 0">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Atención:</strong> {{ stockBajo }} productos con stock bajo
           </div>
         </div>
       </div>
