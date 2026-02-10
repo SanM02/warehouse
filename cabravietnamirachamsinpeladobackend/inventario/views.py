@@ -369,11 +369,13 @@ class ClienteViewSet(ModelViewSet):
 @permission_classes([IsAuthenticated])
 def productos_dropdown(request):
     """
-    Retorna TODOS los productos con todos sus campos.
+    Retorna productos con campos mínimos para dropdowns.
+    Optimizado: usa .values() directo sin serializer pesado.
     """
-    productos = Producto.objects.filter(activo=True).order_by('nombre')
-    serializer = ProductoSerializer(productos, many=True)
-    return Response(serializer.data)
+    productos = Producto.objects.filter(activo=True).values(
+        'id', 'codigo', 'nombre', 'precio_costo', 'precio_unitario', 'stock_disponible'
+    ).order_by('nombre')
+    return Response(list(productos))
 
 
 @api_view(['GET'])
@@ -388,6 +390,87 @@ def proveedores_dropdown(request):
     ).order_by('nombre')
     
     return Response(list(proveedores))
+
+
+# ==========================================
+# ENDPOINT PARA CREAR PRODUCTO RÁPIDO
+# ==========================================
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def producto_rapido(request):
+    """
+    Crea un producto rápido con campos mínimos.
+    Usado desde el modal de factura de compra cuando llega un artículo nuevo.
+    - Código: opcional (se deja null si no se pone)
+    - Categoría: texto libre, se busca o crea automáticamente
+    - Precio venta: se calcula como precio_costo + 30%
+    """
+    from .models import Categoria
+    from decimal import Decimal
+    
+    nombre = request.data.get('nombre', '').strip()
+    codigo = request.data.get('codigo', '').strip() or None
+    categoria_texto = request.data.get('categoria_nombre', '').strip()
+    marca = request.data.get('marca', '').strip()
+    descripcion = request.data.get('descripcion', '').strip()
+    precio_costo = Decimal(str(request.data.get('precio_costo', 0) or 0))
+    
+    if not nombre:
+        return Response({'error': 'El nombre del producto es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+    if not categoria_texto:
+        return Response({'error': 'La categoría es obligatoria'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Buscar o crear la categoría por nombre
+    categoria, creada = Categoria.objects.get_or_create(
+        nombre__iexact=categoria_texto,
+        defaults={'nombre': categoria_texto}
+    )
+    
+    # Verificar código duplicado si se proporcionó
+    if codigo and Producto.objects.filter(codigo=codigo).exists():
+        return Response({'error': f'Ya existe un producto con código {codigo}'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Calcular precio de venta = costo + 30%
+    precio_unitario = (precio_costo * Decimal('1.30')).quantize(Decimal('1'))
+    
+    producto = Producto.objects.create(
+        codigo=codigo,
+        nombre=nombre,
+        categoria=categoria,
+        marca=marca or None,
+        descripcion=descripcion or None,
+        precio_costo=precio_costo,
+        precio_unitario=precio_unitario,
+        stock_disponible=0,
+        stock_minimo=0,
+        activo=True
+    )
+    
+    return Response({
+        'id': producto.id,
+        'codigo': producto.codigo or '',
+        'nombre': producto.nombre,
+        'categoria': producto.categoria.id,
+        'categoria_nombre': producto.categoria.nombre,
+        'categoria_creada': creada,
+        'marca': producto.marca or '',
+        'descripcion': producto.descripcion or '',
+        'precio_costo': float(producto.precio_costo),
+        'precio_unitario': float(producto.precio_unitario),
+        'mensaje': f'Producto "{producto.nombre}" creado exitosamente'
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def categorias_dropdown(request):
+    """
+    Retorna TODAS las categorías para selectores.
+    """
+    from .models import Categoria
+    categorias = Categoria.objects.all().values('id', 'nombre').order_by('nombre')
+    return Response(list(categorias))
 
 
 # ==========================================

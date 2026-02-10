@@ -564,8 +564,10 @@ class FacturaCompraDetailSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
-        """Crear factura de compra con sus detalles"""
+        """Crear factura de compra con sus detalles e impactar inventario"""
         from decimal import Decimal
+        from django.db import transaction
+        from .models import Movimiento
         
         detalles_data = validated_data.pop('detalles')
         usuario = self.context['request'].user if 'request' in self.context else None
@@ -582,18 +584,34 @@ class FacturaCompraDetailSerializer(serializers.ModelSerializer):
         if 'subtotal' not in validated_data or validated_data['subtotal'] == 0:
             validated_data['subtotal'] = subtotal_calculado
         
-        # Crear la factura
-        factura = FacturaCompra.objects.create(
-            usuario_registro=usuario,
-            **validated_data
-        )
-        
-        # Crear los detalles
-        for detalle_data in detalles_data:
-            DetalleFacturaCompra.objects.create(
-                factura_compra=factura,
-                **detalle_data
+        with transaction.atomic():
+            # Crear la factura
+            factura = FacturaCompra.objects.create(
+                usuario_registro=usuario,
+                **validated_data
             )
+            
+            # Crear los detalles y movimientos de entrada al inventario
+            for detalle_data in detalles_data:
+                detalle = DetalleFacturaCompra.objects.create(
+                    factura_compra=factura,
+                    **detalle_data
+                )
+                
+                # Crear movimiento de entrada para actualizar stock
+                # El signal post_save de Movimiento se encarga de sumar al stock
+                Movimiento.objects.create(
+                    producto=detalle.producto,
+                    tipo='entrada',
+                    cantidad=int(detalle.cantidad),
+                    descripcion=f'Entrada por Factura de Compra #{factura.numero_factura} - Proveedor: {factura.proveedor.nombre}',
+                    usuario=usuario
+                )
+                
+                # Actualizar precio de costo del producto
+                producto = detalle.producto
+                producto.precio_costo = detalle.precio_unitario
+                producto.save(update_fields=['precio_costo'])
         
         return factura
     

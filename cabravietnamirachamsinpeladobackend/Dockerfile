@@ -23,7 +23,8 @@ WORKDIR /app
 
 # Copiar requirements e instalar dependencias Python
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt gunicorn
 
 # Copiar código del proyecto
 COPY . .

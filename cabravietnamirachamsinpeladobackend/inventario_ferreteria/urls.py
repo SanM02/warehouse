@@ -21,7 +21,7 @@ from inventario.views import (ProtectedView, CategoriaViewSet, SubcategoriaViewS
                             MovimientoViewSet, productos_stock_bajo, FacturaViewSet,
                             ProveedorViewSet, OrdenCompraViewSet, RecepcionMercaderiaViewSet, 
                             ProductoProveedorViewSet, ClienteViewSet, FacturaCompraViewSet, health_check,
-                            productos_dropdown, proveedores_dropdown)
+                            productos_dropdown, proveedores_dropdown, producto_rapido, categorias_dropdown)
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -46,6 +46,8 @@ urlpatterns = [
     path('api/health/', health_check, name='health-check'),  # Healthcheck sin autenticación
     # Endpoints para dropdowns (sin paginacion)
     path('api/productos/dropdown/', productos_dropdown, name='productos-dropdown'),
+    path('api/productos/rapido/', producto_rapido, name='producto-rapido'),
+    path('api/categorias/dropdown/', categorias_dropdown, name='categorias-dropdown'),
     path('api/proveedores/dropdown/', proveedores_dropdown, name='proveedores-dropdown'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

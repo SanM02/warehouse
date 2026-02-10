@@ -63,6 +63,11 @@ export class FacturasCompraComponent implements OnInit {
   
   cargando = false;
 
+  // Producto rápido
+  mostrarModalProductoRapido = false;
+  guardandoProducto = false;
+  nuevoProducto = this.getProductoRapidoVacio();
+
   constructor(
     private facturaCompraService: FacturaCompraService,
     private proveedorService: ProveedorService,
@@ -108,9 +113,9 @@ export class FacturasCompraComponent implements OnInit {
   }
 
   cargarProveedores(): void {
-    this.proveedorService.getProveedores({ page_size: 1000 }).subscribe({
+    this.http.get<any[]>('http://localhost:8000/api/proveedores/dropdown/').subscribe({
       next: (response: any) => {
-        this.proveedores = response.results || response;
+        this.proveedores = response;
       },
       error: (error: any) => {
         console.error('Error al cargar proveedores:', error);
@@ -393,5 +398,86 @@ export class FacturasCompraComponent implements OnInit {
   getNombreProducto(id: number): string {
     const producto = this.productos.find((p: any) => p.id === id);
     return producto ? producto.nombre : '';
+  }
+
+  // ==========================================
+  // PRODUCTO RÁPIDO
+  // ==========================================
+
+  getProductoRapidoVacio(): any {
+    return {
+      codigo: '',
+      nombre: '',
+      categoria_nombre: '',
+      marca: '',
+      descripcion: '',
+      precio_costo: 0,
+      precio_unitario: 0
+    };
+  }
+
+  calcularPrecioVenta(): void {
+    const costo = this.nuevoProducto.precio_costo || 0;
+    this.nuevoProducto.precio_unitario = Math.round(costo * 1.30);
+  }
+
+  abrirModalProductoRapido(): void {
+    this.nuevoProducto = this.getProductoRapidoVacio();
+    this.mostrarModalProductoRapido = true;
+  }
+
+  cerrarModalProductoRapido(): void {
+    this.mostrarModalProductoRapido = false;
+    this.nuevoProducto = this.getProductoRapidoVacio();
+  }
+
+  guardarProductoRapido(): void {
+    if (!this.nuevoProducto.nombre.trim()) {
+      Swal.fire('Error', 'El nombre del producto es obligatorio', 'error');
+      return;
+    }
+    if (!this.nuevoProducto.categoria_nombre || !this.nuevoProducto.categoria_nombre.trim()) {
+      Swal.fire('Error', 'La categoría es obligatoria', 'error');
+      return;
+    }
+
+    this.guardandoProducto = true;
+
+    this.http.post<any>('http://localhost:8000/api/productos/rapido/', this.nuevoProducto).subscribe({
+      next: (response: any) => {
+        // Agregar el nuevo producto al dropdown
+        this.productos.push({
+          id: response.id,
+          codigo: response.codigo,
+          nombre: response.nombre,
+          precio_costo: response.precio_costo,
+          precio_unitario: response.precio_unitario
+        });
+
+        // Si hay detalles vacíos, autoseleccionar el nuevo producto en el último
+        const ultimoDetalle = this.facturaActual.detalles[this.facturaActual.detalles.length - 1];
+        if (ultimoDetalle && (!ultimoDetalle.producto || ultimoDetalle.producto == 0)) {
+          ultimoDetalle.producto = response.id;
+          ultimoDetalle.precio_unitario = response.precio_costo || 0;
+          this.calcularTotales();
+        }
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Producto creado',
+          text: `"${response.nombre}" (${response.codigo}) fue creado y ya está disponible en el listado.`,
+          timer: 2500,
+          showConfirmButton: false
+        });
+
+        this.cerrarModalProductoRapido();
+        this.guardandoProducto = false;
+      },
+      error: (error: any) => {
+        const mensaje = error.error?.error || 'No se pudo crear el producto';
+        Swal.fire('Error', mensaje, 'error');
+        this.guardandoProducto = false;
+      }
+    });
   }
 }

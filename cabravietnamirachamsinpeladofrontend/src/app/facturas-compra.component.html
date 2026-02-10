@@ -368,7 +368,12 @@
             <table class="table table-sm">
               <thead>
                 <tr>
-                  <th style="width: 35%">Producto *</th>
+                  <th style="width: 30%">
+                    Producto *
+                    <button type="button" class="btn btn-sm btn-outline-success ms-1" (click)="abrirModalProductoRapido()" title="Crear producto nuevo">
+                      <i class="fas fa-plus"></i> Nuevo
+                    </button>
+                  </th>
                   <th style="width: 10%">Cantidad *</th>
                   <th style="width: 15%">Precio Unit. *</th>
                   <th style="width: 15%">Subtotal</th>
@@ -524,3 +529,108 @@
 </div>
 
 <div class="modal-backdrop fade" [class.show]="mostrarModal" *ngIf="mostrarModal"></div>
+
+<!-- Modal Producto Rápido -->
+<div class="modal fade" [class.show]="mostrarModalProductoRapido" [style.display]="mostrarModalProductoRapido ? 'block' : 'none'" tabindex="-1" style="z-index: 1060;">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">
+          <i class="fas fa-plus-circle me-2"></i>Crear Producto Rápido
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="cerrarModalProductoRapido()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info py-2">
+          <i class="fas fa-info-circle me-1"></i>
+          Creá el producto rápidamente para seguir cargando la factura. Después podés completar más datos desde el módulo de Productos.
+        </div>
+        <form>
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Nombre del Producto *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="nuevoProducto.nombre"
+                name="np_nombre"
+                placeholder="Ej: Kitadol 500mg"
+                required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Código <small class="text-muted">(opcional)</small></label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="nuevoProducto.codigo"
+                name="np_codigo"
+                placeholder="Dejar vacío si no tiene">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Categoría *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="nuevoProducto.categoria_nombre"
+                name="np_categoria"
+                placeholder="Ej: Herramientas, Tornillos..."
+                required>
+              <small class="text-muted">Si no existe, se crea automáticamente</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Marca</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="nuevoProducto.marca"
+                name="np_marca"
+                placeholder="Ej: Bosch, Stanley...">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Precio Costo (compra)</label>
+              <input 
+                type="number" 
+                class="form-control" 
+                [(ngModel)]="nuevoProducto.precio_costo"
+                name="np_precio_costo"
+                (ngModelChange)="calcularPrecioVenta()"
+                min="0"
+                placeholder="0">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Precio Venta <span class="badge bg-info">+30% automático</span></label>
+              <input 
+                type="text" 
+                class="form-control bg-light" 
+                [value]="formatearMoneda(nuevoProducto.precio_unitario)"
+                name="np_precio_venta"
+                readonly>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Descripción</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                [(ngModel)]="nuevoProducto.descripcion"
+                name="np_descripcion"
+                placeholder="Descripción breve (opcional)">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cerrarModalProductoRapido()">Cancelar</button>
+        <button 
+          type="button" 
+          class="btn btn-success" 
+          (click)="guardarProductoRapido()"
+          [disabled]="guardandoProducto">
+          <span *ngIf="guardandoProducto" class="spinner-border spinner-border-sm me-1"></span>
+          <i class="fas fa-save me-1" *ngIf="!guardandoProducto"></i>
+          Crear Producto
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show" *ngIf="mostrarModalProductoRapido" style="z-index: 1055;"></div>
