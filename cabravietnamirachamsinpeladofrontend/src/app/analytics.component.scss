@@ -37,3 +37,22 @@ h6 {
   padding: 0.25rem 0;
   font-size: 0.9rem;
 }
+
+// Dark mode
+:host-context(body.dark-mode) {
+  .card-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #3b1d72 100%) !important;
+  }
+
+  h6 {
+    color: #e2e8f0;
+  }
+
+  .list-unstyled li {
+    color: #cbd5e1;
+  }
+
+  canvas {
+    filter: brightness(0.95);
+  }
+}

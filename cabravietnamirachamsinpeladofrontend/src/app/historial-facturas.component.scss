@@ -76,3 +76,22 @@
     font-size: 0.85rem;
   }
 }
+
+// Dark mode
+:host-context(body.dark-mode) {
+  .factura-modal {
+    .modal-body {
+      background: #151a27 !important;
+    }
+  }
+
+  .factura-row {
+    &:hover {
+      background-color: rgba(59, 130, 246, 0.06);
+    }
+  }
+
+  .modal-backdrop {
+    background: rgba(0, 0, 0, 0.7);
+  }
+}

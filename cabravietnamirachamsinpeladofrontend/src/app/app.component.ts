@@ -18,6 +18,7 @@ export class AppComponent implements OnInit {
   isBrowser: boolean;
   username: string | null = null;
   isLoginPage = false;
+  darkMode = false;
 
   constructor(
     private router: Router,
@@ -112,6 +113,25 @@ export class AppComponent implements OnInit {
       this.renderer.removeClass(document.body, 'sb-sidenav-toggled');
       this.updateBodyClass();
       this.updateUsername();
+
+      // Restore dark mode preference
+      const savedDarkMode = localStorage.getItem('darkMode');
+      if (savedDarkMode === 'true') {
+        this.darkMode = true;
+        this.renderer.addClass(document.body, 'dark-mode');
+      }
+    }
+  }
+
+  toggleDarkMode() {
+    this.darkMode = !this.darkMode;
+    if (this.isBrowser) {
+      if (this.darkMode) {
+        this.renderer.addClass(document.body, 'dark-mode');
+      } else {
+        this.renderer.removeClass(document.body, 'dark-mode');
+      }
+      localStorage.setItem('darkMode', String(this.darkMode));
     }
   }
 

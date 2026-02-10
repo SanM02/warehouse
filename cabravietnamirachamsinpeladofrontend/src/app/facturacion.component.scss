@@ -370,3 +370,149 @@
 .producto-dropdown::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
+// ==========================================
+// 🌙 DARK MODE - Facturación Overrides
+// ==========================================
+:host-context(body.dark-mode) {
+
+  .factura-card {
+    border-color: #1e2a3a;
+    background: #151a27;
+
+    &:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  .factura-header {
+    background: #1a2035 !important;
+    border-bottom-color: #1e2a3a !important;
+  }
+
+  // Client badges
+  .badge-cliente-ok {
+    background: #064e3b;
+    color: #6ee7b7;
+  }
+
+  .badge-cliente-nuevo {
+    background: #451a03;
+    color: #fde68a;
+  }
+
+  // Product dropdown
+  .producto-dropdown {
+    background: #1a2035;
+    border-color: #2a3247;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+
+  .producto-dropdown-header {
+    background: #111827;
+    border-bottom-color: #2a3247;
+    color: #94a3b8;
+  }
+
+  .producto-dropdown-item {
+    border-bottom-color: #1e2536;
+    color: #e2e8f0;
+
+    &:hover {
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    &.selected {
+      background: rgba(59, 130, 246, 0.12);
+      border-left-color: #3b82f6;
+    }
+  }
+
+  .producto-dropdown-icon {
+    background: #1e2536;
+    color: #94a3b8;
+  }
+
+  // Product preview
+  .producto-preview {
+    background: #0a2e1a;
+    border-color: #065f46;
+  }
+
+  .producto-preview-icon {
+    background: #059669;
+  }
+
+  // Cart table
+  .factura-table {
+    thead th {
+      color: #94a3b8;
+      background: #111827;
+    }
+
+    tbody td {
+      color: #e2e8f0;
+      border-color: #1e2a3a;
+    }
+  }
+
+  .carrito-row:hover {
+    background: rgba(59, 130, 246, 0.05) !important;
+  }
+
+  .carrito-footer {
+    background: #1a2035 !important;
+
+    td {
+      border-top-color: #2a3247;
+    }
+  }
+
+  // Empty cart
+  .carrito-vacio-icon {
+    background: #1e2536;
+    color: #4b5563;
+  }
+
+  // Summary panel
+  .factura-header-resumen {
+    background: linear-gradient(135deg, #0d1117, #1a2035) !important;
+  }
+
+  .resumen-linea {
+    border-bottom-color: #1e2a3a;
+    color: #e2e8f0;
+  }
+
+  .total-valor {
+    color: #34d399;
+  }
+
+  .resumen-info {
+    background: #111827;
+
+    small {
+      color: #6b7280;
+    }
+  }
+
+  // Form labels
+  .form-label-sm {
+    color: #cbd5e1;
+  }
+
+  // Create button stays same (green gradient)
+
+  // Dropdown scrollbar
+  .producto-dropdown::-webkit-scrollbar-track {
+    background: #1a2035;
+  }
+
+  .producto-dropdown::-webkit-scrollbar-thumb {
+    background: #2a3247;
+  }
+
+  .producto-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #374151;
+  }
+}

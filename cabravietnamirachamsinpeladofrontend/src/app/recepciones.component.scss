@@ -71,3 +71,15 @@ tfoot th {
     margin-bottom: 1rem;
   }
 }
+
+// Dark mode
+:host-context(body.dark-mode) {
+  .table-borderless tr td:first-child {
+    color: #6b7280;
+  }
+
+  tfoot th {
+    border-top-color: #2a3247;
+    background-color: rgba(16, 185, 129, 0.08);
+  }
+}

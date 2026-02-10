@@ -46,3 +46,22 @@ canvas {
 .card.bg-warning {
   cursor: default;
 }
+
+// Dark mode
+:host-context(body.dark-mode) {
+  .table-hover tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.08) !important;
+  }
+
+  .text-xs {
+    color: #94a3b8;
+  }
+
+  .fa-2x {
+    opacity: 0.15;
+  }
+
+  .text-success, .text-primary, .text-info, .text-warning {
+    font-weight: 700;
+  }
+}

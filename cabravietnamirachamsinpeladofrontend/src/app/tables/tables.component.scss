@@ -9,3 +9,10 @@
   max-height: 600px;
   overflow-y: auto;
 }
+
+// Dark mode
+:host-context(body.dark-mode) {
+  .modal.show {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+}

@@ -12,6 +12,12 @@
   </form>
   <!-- Navbar-->
   <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+    <!-- Dark Mode Toggle -->
+    <li class="nav-item me-2">
+      <button class="btn btn-link nav-link dark-mode-toggle" (click)="toggleDarkMode()" [title]="darkMode ? 'Modo claro' : 'Modo oscuro'">
+        <i class="fas" [ngClass]="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+      </button>
+    </li>
     <li class="nav-item dropdown">
       <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
         <i class="fas fa-user fa-fw"></i>

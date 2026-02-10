@@ -4,6 +4,23 @@
   background-color: rgba(37, 99, 235, 0.05);
 }
 
+:host-context(body.dark-mode) {
+  .table-hover tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.08) !important;
+  }
+
+  .modal-header {
+    border-bottom-color: #2a3247;
+    background: #1a2035;
+    color: #f1f5f9;
+  }
+
+  .modal-footer {
+    border-top-color: #2a3247;
+    background: #1a2035;
+  }
+}
+
 .btn-sm {
   padding: 0.3rem 0.55rem;
   font-size: 0.8rem;
