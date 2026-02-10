@@ -1,328 +1,357 @@
 // ==========================================
-// 🏭 INDUSTRIAL LAYOUT - Navegación y Estructura
+// Layout - Navegación y Estructura
+// Diseño elegante J&G Repuestos
 // ==========================================
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Work+Sans:wght@400;500;600&display=swap');
 
 // ==========================================
-// 🎨 Paleta Industrial
-// ==========================================
-$industrial-navy: #1a365d;
-$industrial-orange: #ff6b35;
-$industrial-green: #2d6a4f;
-$industrial-steel: #64748b;
-$industrial-dark: #0f172a;
-$industrial-light: #f8fafc;
-$industrial-surface: #f4f5f7;
-
-// ==========================================
-// 📱 TOP NAV - Barra Superior Industrial
+// 📱 TOP NAV - Barra Superior
 // ==========================================
 .sb-topnav {
-  background: $industrial-dark !important;
-  border-bottom: 4px solid $industrial-orange;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  height: 65px;
-  
+  background: linear-gradient(135deg, #1a1d23 0%, #2d3239 100%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+  height: 56px;
+  backdrop-filter: blur(10px);
+
   .navbar-brand {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1.8rem;
-    font-weight: 800;
-    letter-spacing: 2px;
-    text-transform: uppercase;
+    font-size: 1.2rem;
+    font-weight: 700;
     color: white !important;
-    padding: 1rem 1.5rem;
+    padding: 0.5rem 1rem;
+    letter-spacing: 0.3px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-image: none !important;
     position: relative;
-    transition: all 0.2s ease;
-    
+
+    img {
+      display: none !important;
+    }
+
     &::after {
       content: '';
       position: absolute;
-      bottom: 0;
-      left: 1.5rem;
+      bottom: 8px;
+      left: 1rem;
       width: 0;
-      height: 3px;
-      background: $industrial-orange;
-      transition: width 0.3s ease;
+      height: 2px;
+      background: linear-gradient(90deg, #10b981, #3b82f6);
+      border-radius: 1px;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
+
     &:hover {
-      color: $industrial-orange !important;
-      transform: translateX(3px);
-      
+      opacity: 1;
       &::after {
-        width: 60%;
+        width: calc(100% - 2rem);
       }
     }
   }
-  
+
   // Botón de toggle del sidebar
   .btn-link {
-    color: white !important;
-    font-size: 1.3rem;
-    padding: 0.75rem 1rem;
-    border: 2px solid transparent;
-    transition: all 0.2s ease;
-    
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 1.1rem;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.25s ease;
+    border-radius: 0.5rem;
+
     &:hover {
-      color: $industrial-orange !important;
-      border-color: $industrial-orange;
-      background: rgba(255, 107, 53, 0.1);
+      color: white !important;
+      background: rgba(255, 255, 255, 0.08);
     }
   }
-  
+
   // Buscador
   .form-control {
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
-    font-family: 'Work Sans', sans-serif;
-    border-radius: 0;
-    padding: 0.6rem 1rem;
-    
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+
     &::placeholder {
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.35);
     }
-    
+
     &:focus {
-      background: rgba(255, 255, 255, 0.15);
-      border-color: $industrial-orange;
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(59, 130, 246, 0.5);
       color: white;
-      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
     }
   }
-  
+
   .btn-primary {
-    background: $industrial-orange;
-    border: 2px solid $industrial-orange;
-    border-radius: 0;
-    font-weight: 600;
-    
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: none;
+    border-radius: 0 0.5rem 0.5rem 0;
+    transition: all 0.25s ease;
+
     &:hover {
-      background: darken($industrial-orange, 8%);
-      border-color: darken($industrial-orange, 8%);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(255, 107, 53, 0.3);
+      background: linear-gradient(135deg, #60a5fa, #3b82f6);
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
     }
   }
-  
+
   // Dropdown de usuario
   .nav-link {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    color: white !important;
-    padding: 0.75rem 1.25rem;
-    transition: all 0.2s ease;
-    
+    color: rgba(255, 255, 255, 0.6) !important;
+    padding: 0.5rem 1rem;
+    transition: all 0.25s ease;
+    border-radius: 0.5rem;
+
     &:hover {
-      color: $industrial-orange !important;
-      background: rgba(255, 107, 53, 0.1);
+      color: white !important;
+      background: rgba(255, 255, 255, 0.08);
     }
   }
-  
+
   .dropdown-menu {
     background: white;
-    border: 3px solid $industrial-dark;
-    border-radius: 0;
-    box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.1);
-    padding: 0;
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 0.5rem;
     margin-top: 0.5rem;
-    
+    animation: dropdownSlide 0.2s ease-out;
+
     .dropdown-item {
-      font-family: 'Work Sans', sans-serif;
-      padding: 0.75rem 1.25rem;
-      border-left: 3px solid transparent;
-      transition: all 0.15s ease;
-      
+      padding: 0.55rem 1rem;
+      font-size: 0.85rem;
+      border-radius: 0.5rem;
+      transition: all 0.2s ease;
+      color: #374151;
+
       &:hover {
-        background: $industrial-surface;
-        border-left-color: $industrial-orange;
-        transform: translateX(4px);
+        background: #f0f7ff;
+        color: #2563eb;
+        transform: translateX(2px);
+      }
+
+      &:active {
+        background: #dbeafe;
+        color: #1d4ed8;
       }
     }
-    
+
     .dropdown-divider {
-      border-color: $industrial-surface;
-      margin: 0;
+      border-color: #f3f4f6;
+      margin: 0.25rem 0.5rem;
     }
   }
 }
 
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 // ==========================================
-// 🗂️ SIDENAV - Navegación Lateral Industrial
+// 🗂️ SIDENAV - Navegación Lateral
 // ==========================================
 .sb-sidenav {
-  background: linear-gradient(180deg, $industrial-dark 0%, darken($industrial-dark, 5%) 100%) !important;
-  border-right: 4px solid $industrial-orange;
-  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.2);
-  
+  background: #fafbfc !important;
+  border-right: 1px solid #e8ecf1;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.03);
+  overflow-x: hidden !important;
+
   // Menú principal
   .sb-sidenav-menu {
+    overflow-x: hidden !important;
+
     .nav {
-      padding: 1rem 0;
-      
+      padding: 0.75rem 0;
+      overflow-x: hidden !important;
+
       // Encabezados de sección
       .sb-sidenav-menu-heading {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         font-weight: 700;
-        letter-spacing: 2px;
+        letter-spacing: 1.5px;
         text-transform: uppercase;
-        color: $industrial-steel;
-        padding: 1.5rem 1rem 0.75rem 1rem;
+        color: #9ca3af;
+        padding: 1.5rem 1.25rem 0.5rem 1.25rem;
         margin: 0;
-        position: relative;
-        
-        &::before {
-          content: '';
-          position: absolute;
-          top: 0.5rem;
-          left: 1rem;
-          width: 30px;
-          height: 2px;
-          background: $industrial-orange;
-        }
-        
+
         &:not(:first-child) {
-          margin-top: 1rem;
-          border-top: 2px solid rgba(100, 116, 139, 0.2);
-          padding-top: 2rem;
+          margin-top: 0.25rem;
+          border-top: 1px solid #f0f1f3;
+          padding-top: 1.25rem;
         }
       }
-      
+
       // Enlaces de navegación
       .nav-link {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: 1rem;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        color: rgba(255, 255, 255, 0.85) !important;
-        padding: 0.9rem 1rem;
-        margin: 0.25rem 0.75rem;
-        border-left: 3px solid transparent;
-        border-radius: 0;
-        transition: all 0.2s ease;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #4b5563 !important;
+        padding: 0.6rem 1rem;
+        margin: 2px 0.75rem;
+        border-radius: 0.5rem;
+        border-left: none;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         overflow: hidden;
-        
+        white-space: nowrap;
+
         &::before {
           content: '';
           position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255, 107, 53, 0.1), transparent);
-          transition: left 0.4s ease;
+          left: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 3px;
+          height: 0;
+          background: linear-gradient(180deg, #3b82f6, #10b981);
+          border-radius: 0 2px 2px 0;
+          transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
         &:hover {
-          background: rgba(255, 107, 53, 0.15);
-          border-left-color: $industrial-orange;
-          color: white !important;
-          transform: translateX(4px);
-          
+          background: linear-gradient(135deg, #eff6ff, #f0fdf9);
+          color: #1d4ed8 !important;
+          transform: translateX(2px);
+
           &::before {
-            left: 100%;
+            height: 60%;
           }
-          
+
           .sb-nav-link-icon {
-            color: $industrial-orange;
-            transform: scale(1.15) rotate(-5deg);
+            color: #3b82f6;
+            transform: scale(1.1);
           }
         }
-        
+
         &:active,
         &.active {
-          background: rgba(255, 107, 53, 0.2);
-          border-left-color: $industrial-orange;
-          color: $industrial-orange !important;
-          
+          background: linear-gradient(135deg, #dbeafe, #d1fae5);
+          color: #1d4ed8 !important;
+
+          &::before {
+            height: 70%;
+          }
+
           .sb-nav-link-icon {
-            color: $industrial-orange;
+            color: #2563eb;
           }
         }
-        
+
         .sb-nav-link-icon {
-          color: $industrial-steel;
-          margin-right: 0.75rem;
-          font-size: 1.1rem;
-          transition: all 0.2s ease;
-          display: inline-block;
+          color: #9ca3af;
+          margin-right: 0.6rem;
+          font-size: 0.9rem;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 1.25rem;
         }
       }
     }
   }
-  
+
   // Footer del sidenav
   .sb-sidenav-footer {
-    background: darken($industrial-dark, 8%);
-    border-top: 3px solid $industrial-orange;
-    padding: 1rem;
-    font-family: 'Work Sans', sans-serif;
-    
+    background: linear-gradient(135deg, #f0f4f8, #f5f7fa);
+    border-top: 1px solid #e8ecf1;
+    padding: 0.85rem 1.25rem;
+    overflow-x: hidden !important;
+
     .small {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 600;
       letter-spacing: 1px;
       text-transform: uppercase;
-      color: $industrial-steel;
-      margin-bottom: 0.25rem;
+      color: #10b981;
+      margin-bottom: 0.2rem;
       display: block;
     }
-    
+
     span {
-      color: white;
+      color: #1f2937;
       font-weight: 600;
-      font-size: 1rem;
+      font-size: 0.9rem;
     }
   }
 }
 
 // ==========================================
-// 📄 FOOTER - Pie de Página Industrial
+// 📄 FOOTER - Pie de Página
 // ==========================================
 footer {
-  background: $industrial-dark !important;
-  border-top: 3px solid $industrial-orange;
-  margin-top: 3rem;
-  
+  background: #fafbfc !important;
+  border-top: 1px solid #e8ecf1;
+  margin-top: 2rem;
+
   .text-muted {
-    font-family: 'Work Sans', sans-serif;
-    color: $industrial-steel !important;
-    font-size: 0.9rem;
+    color: #6b7280 !important;
+    font-size: 0.825rem;
   }
-  
+
   a {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 600;
-    color: white;
+    color: #3b82f6;
     text-decoration: none;
-    transition: color 0.2s ease;
-    
+    transition: all 0.2s ease;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: #3b82f6;
+      transition: width 0.3s ease;
+    }
+
     &:hover {
-      color: $industrial-orange;
+      color: #1d4ed8;
+      &::after {
+        width: 100%;
+      }
     }
   }
 }
 
 // ==========================================
-// 📱 RESPONSIVE - Adaptaciones móviles
+// 📱 RESPONSIVE
 // ==========================================
+
+// Login page: full-width, no sidebar, no gaps
+.sb-layout-no-sidenav {
+  #layoutSidenav_content {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    top: 0 !important;
+
+    > main {
+      padding-top: 0 !important;
+    }
+  }
+}
+
 @media (max-width: 991.98px) {
   .sb-topnav {
     .navbar-brand {
-      font-size: 1.4rem;
+      font-size: 1.05rem;
     }
   }
-  
+
   .sb-sidenav {
     .sb-sidenav-menu {
       .nav {
         .nav-link {
-          font-size: 0.95rem;
-          padding: 0.8rem 0.75rem;
+          font-size: 0.825rem;
+          padding: 0.55rem 0.75rem;
         }
       }
     }
@@ -330,25 +359,25 @@ footer {
 }
 
 // ==========================================
-// 🎭 ANIMACIONES
+// Animación de entrada para nav links
 // ==========================================
-@keyframes slideInFromLeft {
-  from {
-    transform: translateX(-20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
+.sb-sidenav-menu .nav .nav-link {
+  animation: sidenavSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+
+  @for $i from 1 through 12 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{$i * 0.04}s;
+    }
   }
 }
 
-.sb-sidenav-menu .nav .nav-link {
-  animation: slideInFromLeft 0.3s ease-out backwards;
-  
-  @for $i from 1 through 12 {
-    &:nth-child(#{$i}) {
-      animation-delay: #{$i * 0.05}s;
-    }
+@keyframes sidenavSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }

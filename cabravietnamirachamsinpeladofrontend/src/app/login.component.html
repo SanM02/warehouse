@@ -1,110 +1,91 @@
-<div class="login-industrial-wrapper">
-  <!-- Patrón de fondo industrial -->
-  <div class="industrial-pattern"></div>
-  
-  <!-- Contenedor principal del login -->
+<div class="login-wrapper">
   <div class="login-container">
-    <div class="login-card">
+    <div class="login-card card shadow-lg border-0">
       
-      <!-- Header con logo -->
-      <div class="login-header">
-        <div class="logo-industrial">
-          <i class="fas fa-tools"></i>
-          <span class="logo-text">FERRETERÍA</span>
+      <!-- Header -->
+      <div class="card-header bg-primary text-white text-center py-4">
+        <div class="login-logo mb-3">
+          <img src="/assets/favicon.png" alt="J&G Repuestos" style="height: 80px; width: auto; object-fit: contain;">
         </div>
-        <h1 class="login-title">J&G</h1>
-        <div class="title-underline"></div>
-        <p class="login-subtitle">Sistema de Gestión Industrial</p>
+        <h2 class="fw-bold mb-1">J&G Repuestos</h2>
+        <p class="mb-0 opacity-75 small">Sistema de Gestión de Inventario</p>
       </div>
       
       <!-- Formulario -->
-      <form (ngSubmit)="login()" class="login-form">
+      <div class="card-body p-4">
+        <h5 class="text-center text-muted mb-4">Iniciar Sesión</h5>
         
-        <!-- Campo Usuario -->
-        <div class="form-group-industrial">
-          <label for="username" class="form-label-industrial">
-            <i class="fas fa-user"></i>
-            USUARIO
-          </label>
-          <div class="input-wrapper">
+        <form (ngSubmit)="login()">
+          
+          <!-- Campo Usuario -->
+          <div class="mb-3">
+            <label for="username" class="form-label fw-semibold">
+              <i class="fas fa-user me-1 text-primary"></i> Usuario
+            </label>
             <input 
               type="text" 
               id="username" 
-              class="form-control-industrial" 
+              class="form-control form-control-lg" 
               [(ngModel)]="username" 
               name="username" 
               required 
               autofocus
               placeholder="Ingrese su usuario">
-            <div class="input-border-effect"></div>
           </div>
-        </div>
-        
-        <!-- Campo Contraseña -->
-        <div class="form-group-industrial">
-          <label for="password" class="form-label-industrial">
-            <i class="fas fa-lock"></i>
-            CONTRASEÑA
-          </label>
-          <div class="input-wrapper">
+          
+          <!-- Campo Contraseña -->
+          <div class="mb-3">
+            <label for="password" class="form-label fw-semibold">
+              <i class="fas fa-lock me-1 text-primary"></i> Contraseña
+            </label>
             <input 
               type="password" 
               id="password" 
-              class="form-control-industrial" 
+              class="form-control form-control-lg" 
               [(ngModel)]="password" 
               name="password" 
               required
               placeholder="Ingrese su contraseña">
-            <div class="input-border-effect"></div>
           </div>
-        </div>
-        
-        <!-- Mensaje de error -->
-        <div *ngIf="error" class="alert-industrial">
-          <i class="fas fa-exclamation-triangle"></i>
-          <span>{{ error }}</span>
-        </div>
-        
-        <!-- Botón de ingreso -->
-        <button 
-          type="submit" 
-          class="btn-industrial-primary" 
-          [disabled]="loading"
-          [class.loading]="loading">
-          <span *ngIf="!loading" class="btn-content">
-            <i class="fas fa-sign-in-alt"></i>
-            INGRESAR AL SISTEMA
-          </span>
-          <span *ngIf="loading" class="btn-loading">
-            <span class="spinner"></span>
-            PROCESANDO...
-          </span>
-        </button>
-        
-      </form>
+          
+          <!-- Mensaje de error -->
+          <div *ngIf="error" class="alert alert-danger d-flex align-items-center py-2" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <span>{{ error }}</span>
+          </div>
+          
+          <!-- Botón de ingreso -->
+          <div class="d-grid mt-4">
+            <button 
+              type="submit" 
+              class="btn btn-primary btn-lg fw-bold" 
+              [disabled]="loading">
+              <span *ngIf="!loading">
+                <i class="fas fa-sign-in-alt me-2"></i>
+                Ingresar al Sistema
+              </span>
+              <span *ngIf="loading">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Procesando...
+              </span>
+            </button>
+          </div>
+          
+        </form>
+      </div>
       
       <!-- Footer del card -->
-      <div class="login-footer">
-        <div class="footer-divider"></div>
-        <p class="footer-text">
-          <i class="fas fa-shield-alt"></i>
+      <div class="card-footer bg-light text-center py-3">
+        <small class="text-muted">
+          <i class="fas fa-shield-alt me-1 text-success"></i>
           Acceso seguro al sistema
-        </p>
+        </small>
       </div>
       
     </div>
     
-    <!-- Decoración lateral -->
-    <div class="side-decoration left">
-      <div class="deco-line"></div>
-      <div class="deco-dot"></div>
-      <div class="deco-line"></div>
-    </div>
-    <div class="side-decoration right">
-      <div class="deco-line"></div>
-      <div class="deco-dot"></div>
-      <div class="deco-line"></div>
-    </div>
+    <!-- Copyright -->
+    <p class="text-center text-white-50 mt-3 small">&copy; 2025 J&G Repuestos</p>
     
   </div>
 </div>

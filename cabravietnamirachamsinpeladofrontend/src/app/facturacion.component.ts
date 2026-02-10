@@ -51,6 +51,9 @@ export class FacturacionComponent implements OnInit, OnDestroy {
   clienteEsNuevo = false;
   guardarClienteAutomatico = false;
 
+  // UI toggles
+  mostrarDatosOpcionales = false;
+
   // NUEVOS CAMPOS PARA FACTURACIÓN MEJORADA
   public nuevaFactura: NuevaFactura = {
     // Datos del cliente
@@ -218,6 +221,9 @@ export class FacturacionComponent implements OnInit, OnDestroy {
         producto: this.productoSeleccionado.id,
         producto_nombre: this.productoSeleccionado.nombre,
         codigo_producto: this.productoSeleccionado.codigo,
+        marca_producto: this.productoSeleccionado.marca || '',
+        categoria_producto: this.productoSeleccionado.categoria || '',
+        stock_disponible: this.productoSeleccionado.stock_disponible,
         cantidad: this.cantidadSeleccionada,
         precio_unitario: precioUnitario,
         subtotal: parseFloat(subtotalCalculado.toFixed(2)) // Asegurar 2 decimales
@@ -239,11 +245,25 @@ export class FacturacionComponent implements OnInit, OnDestroy {
     this.swal.success('Producto agregado al carrito');
   }
 
+  // Cambiar cantidad en carrito con botones +/-
+  public cambiarCantidad(index: number, delta: number) {
+    const detalle = this.detalles[index];
+    const nuevaCantidad = detalle.cantidad + delta;
+    const maxStock = detalle.stock_disponible || this.productos.find(p => p.id === detalle.producto)?.stock_disponible || 999;
+    
+    if (nuevaCantidad >= 1 && nuevaCantidad <= maxStock) {
+      this.detalles[index].cantidad = nuevaCantidad;
+      const precio = parseFloat(this.detalles[index].precio_unitario?.toString());
+      this.detalles[index].subtotal = parseFloat((precio * nuevaCantidad).toFixed(2));
+      this.calcularTotales();
+      this.guardarDatos();
+    }
+  }
+
   public editarDetalle(index: number) {
     const detalle = this.detalles[index];
     const producto = this.productos.find(p => p.id === detalle.producto);
     
-    // Usar un prompt simple para la cantidad
     const nuevaCantidadStr = prompt(
       `Ingrese la nueva cantidad para ${this.getNombreProducto(detalle.producto)}:`,
       detalle.cantidad.toString()
@@ -257,7 +277,7 @@ export class FacturacionComponent implements OnInit, OnDestroy {
         const subtotalCalculado = precio * nuevaCantidad;
         this.detalles[index].subtotal = parseFloat(subtotalCalculado.toFixed(2));
         this.calcularTotales();
-        this.guardarDatos(); // Guardar cambios
+        this.guardarDatos();
         this.swal.success('Cantidad actualizada');
       } else {
         this.swal.error('Cantidad inválida o excede el stock disponible');

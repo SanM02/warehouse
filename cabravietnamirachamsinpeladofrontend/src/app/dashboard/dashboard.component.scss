@@ -1,35 +1,19 @@
+// Dashboard Component Styles
+
 .text-xs {
   font-size: 0.7rem;
-}
-
-.card {
-  transition: transform 0.2s ease-in-out;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .fa-2x {
-  opacity: 0.3;
-}
-
-.badge-success { 
-  background-color: #28a745 !important; 
-}
-
-.badge-warning { 
-  background-color: #ffc107 !important; 
-  color: #212529 !important;
-}
-
-.badge-secondary { 
-  background-color: #6c757d !important; 
+  opacity: 0.2;
+  font-size: 2.5rem;
 }
 
 .table-hover tbody tr:hover {
-  background-color: rgba(0, 123, 255, 0.1);
+  background-color: rgba(37, 99, 235, 0.06);
 }
 
 .breadcrumb {
@@ -43,4 +27,22 @@
 
 canvas {
   max-height: 300px !important;
+}
+
+// Stat number highlight
+.text-success, .text-primary, .text-info, .text-warning {
+  font-weight: 700;
+}
+
+// Progress bars in brands section
+.progress {
+  overflow: hidden;
+}
+
+// Hover lift for stat cards
+.card.bg-primary,
+.card.bg-success,
+.card.bg-info,
+.card.bg-warning {
+  cursor: default;
 }

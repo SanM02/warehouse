@@ -30,9 +30,50 @@ interface Producto {
   styleUrls: ['./tables.component.scss']
 })
 export class TablesComponent implements OnInit {
+  // Paleta de colores elegantes para categorías
+  private categoriaPalette = [
+    { bg: '#eff6ff', color: '#1e40af', border: '#bfdbfe' },
+    { bg: '#ecfdf5', color: '#065f46', border: '#a7f3d0' },
+    { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
+    { bg: '#fce7f3', color: '#9d174d', border: '#fbcfe8' },
+    { bg: '#ede9fe', color: '#5b21b6', border: '#c4b5fd' },
+    { bg: '#ecfeff', color: '#155e75', border: '#a5f3fc' },
+    { bg: '#fff7ed', color: '#9a3412', border: '#fed7aa' },
+    { bg: '#f0fdf4', color: '#166534', border: '#bbf7d0' },
+    { bg: '#fdf2f8', color: '#831843', border: '#f9a8d4' },
+    { bg: '#eef2ff', color: '#3730a3', border: '#a5b4fc' },
+    { bg: '#fefce8', color: '#854d0e', border: '#fef08a' },
+    { bg: '#f0fdfa', color: '#134e4a', border: '#99f6e4' },
+    { bg: '#faf5ff', color: '#6b21a8', border: '#d8b4fe' },
+    { bg: '#fff1f2', color: '#9f1239', border: '#fda4af' },
+    { bg: '#f8fafc', color: '#334155', border: '#cbd5e1' },
+  ];
+
+  private normalizeCategoria(cat: string): string {
+    return (cat || '').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+  }
+
+  private hashString(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+
+  getCategoriaBadgeStyle(categoria: string): any {
+    const normalized = this.normalizeCategoria(categoria);
+    if (!normalized) return { 'background-color': '#f1f5f9', color: '#64748b', 'border': '1px solid #e2e8f0' };
+    const idx = this.hashString(normalized) % this.categoriaPalette.length;
+    const p = this.categoriaPalette[idx];
+    return { 'background-color': p.bg, color: p.color, 'border': '1px solid ' + p.border };
+  }
+
   getCategoriaClass(producto: Producto): string {
-    let cat = producto.categoria ? producto.categoria.toLowerCase().replace(/ /g, '-') : 'nan';
-    return 'categoria-' + cat;
+    return '';
   }
   productos: Producto[] = [];
   search: string = '';

@@ -1,9 +1,13 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, LOCALE_ID } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { authInterceptorFn } from './auth.interceptor.fn';
+import { registerLocaleData } from '@angular/common';
+import localeEsPY from '@angular/common/locales/es-PY';
+
+registerLocaleData(localeEsPY);
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -12,6 +16,7 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(withEventReplay()),
     provideHttpClient(
       withInterceptors([authInterceptorFn])
-    )
+    ),
+    { provide: LOCALE_ID, useValue: 'es-PY' }
   ]
 };

@@ -1,8 +1,6 @@
-/* ============================================
-   ESTILOS HISTORIAL DE FACTURAS - PROFESIONAL
-   ============================================ */
+// Historial de Facturas - Component-specific styles
+// Global design system handles cards, tables, buttons, badges, modals, etc.
 
-/* Backdrop del modal */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -13,49 +11,30 @@
   z-index: 1040;
 }
 
-/* Modal principal */
 .modal {
   z-index: 1050;
 }
 
-/* Estilo especial para el modal de factura */
 .factura-modal {
   border: none;
-  border-radius: 12px;
+  border-radius: 0.75rem;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+
+  .modal-body {
+    background: var(--jg-gray-50, #f9fafb);
+  }
+
+  .modal-header,
+  .modal-footer {
+    border: none;
+  }
 }
 
-.factura-modal .modal-header {
-  border-bottom: none;
-  padding: 1.25rem 1.5rem;
-}
-
-.factura-modal .modal-body {
-  background: #fafafa;
-}
-
-.factura-modal .modal-footer {
-  border-top: none;
-  padding: 1rem 1.5rem;
-}
-
-/* Filas de la tabla principal con hover */
 .factura-row {
   transition: all 0.2s ease;
 }
 
-.factura-row:hover {
-  background-color: #e8f4fc !important;
-  transform: scale(1.005);
-}
-
-/* Card de totales */
-.card.bg-light .table-borderless td {
-  padding: 0.5rem 0;
-}
-
-/* Tabla de productos en el modal */
+// Table de productos en modal
 .table-bordered th {
   font-weight: 600;
   font-size: 0.85rem;
@@ -63,43 +42,36 @@
   letter-spacing: 0.5px;
 }
 
-/* Badge de documento */
-.badge {
-  font-weight: 500;
-}
-
-/* Estilo para impresion */
 @media print {
   .modal-footer {
     display: none !important;
   }
-  
+
   .modal-backdrop {
     display: none !important;
   }
-  
+
   .modal {
     position: static !important;
     display: block !important;
   }
-  
+
   .modal-dialog {
     max-width: 100% !important;
     margin: 0 !important;
   }
-  
+
   .modal-content {
     box-shadow: none !important;
     border: 1px solid #ddd !important;
   }
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .factura-modal .modal-body {
     padding: 1rem;
   }
-  
+
   .table-responsive {
     font-size: 0.85rem;
   }

@@ -1,113 +1,372 @@
+// Facturación - Component-specific styles
 
-/* Puedes personalizar el estilo de la facturación aquí */
-.cursor-pointer {
+// === CARD SYSTEM ===
+.factura-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: visible;
+  transition: box-shadow 0.2s ease;
+
+  .card-header {
+    border-radius: 10px 10px 0 0;
+  }
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.factura-header {
+  background: #fafbfc;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.65rem 1rem;
+}
+
+.header-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.header-icon-success {
+  background: linear-gradient(135deg, #059669, #10b981);
+}
+
+.header-icon-warning {
+  background: linear-gradient(135deg, #d97706, #f59e0b);
+}
+
+// === CLIENT BADGES ===
+.badge-cliente-ok {
+  background: #dcfce7;
+  color: #166534;
+  font-weight: 500;
+  font-size: 0.7rem;
+  padding: 0.3em 0.6em;
+}
+
+.badge-cliente-nuevo {
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 500;
+  font-size: 0.7rem;
+  padding: 0.3em 0.6em;
+}
+
+// === OPTIONAL FIELDS ANIMATION ===
+.datos-opcionales-row {
+  animation: slideDown 0.25s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// === SEARCH ===
+.search-producto-input {
+  border-left: none;
+
+  &:focus {
+    box-shadow: none;
+    border-color: #ced4da;
+  }
+}
+
+.search-producto-input:focus ~ .input-group-text,
+.input-group:focus-within .input-group-text {
+  border-color: #86b7fe;
+}
+
+// === PRODUCT DROPDOWN ===
+.producto-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-top: 4px;
+  max-height: 340px;
+  overflow-y: auto;
+  z-index: 1060;
+  animation: dropdownFade 0.15s ease-out;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.producto-dropdown-header {
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  background: #fafbfc;
+}
+
+.producto-dropdown-item {
+  padding: 0.6rem 0.75rem;
   cursor: pointer;
+  border-bottom: 1px solid #f9fafb;
+  transition: background 0.12s ease;
+
+  &:hover {
+    background: #f0f7ff;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &.selected {
+    background: #eff6ff;
+    border-left: 3px solid #2563eb;
+  }
 }
 
-.cursor-pointer:hover {
-  background-color: var(--bs-gray-100);
+.producto-dropdown-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
-.hover-bg-light:hover {
-  background-color: #f8f9fa !important;
+// === PRODUCT PREVIEW (selected) ===
+.producto-preview {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  animation: previewAppear 0.2s ease-out;
 }
 
-.dropdown-item:hover {
-  background-color: #e9ecef;
+@keyframes previewAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-.table-row-hover:hover {
-  background-color: #f8f9fa;
+.producto-preview-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  flex-shrink: 0;
 }
 
-.card {
-  transition: all 0.3s ease;
+// === CART TABLE ===
+.factura-table {
+  font-size: 0.88rem;
+
+  thead th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    padding: 0.55rem 0.75rem;
+  }
+
+  tbody td {
+    padding: 0.55rem 0.75rem;
+    vertical-align: middle;
+  }
 }
 
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+.carrito-row {
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #f8fafc !important;
+  }
 }
 
-.fade-in {
-  animation: fadeIn 0.3s ease-in;
+.carrito-footer {
+  background: #fafbfc;
+  
+  td {
+    padding: 0.65rem 0.75rem;
+    border-top: 2px solid #e5e7eb;
+  }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+// === +/- BUTTONS ===
+.btn-xs {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  line-height: 1;
 }
 
-.search-input:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+// === EMPTY CART ===
+.carrito-vacio-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #d1d5db;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
 }
 
-.product-card {
-  border-left: 4px solid #28a745;
+// === SUMMARY PANEL ===
+.sticky-summary {
+  position: sticky;
+  top: 72px;
 }
 
-.cart-empty {
-  color: #6c757d;
+.factura-header-resumen {
+  background: linear-gradient(135deg, #1e293b, #334155);
+  padding: 0.75rem 1rem;
 }
 
-.total-amount {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #28a745;
+.resumen-linea {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  font-size: 0.88rem;
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-of-type {
+    border-bottom: none;
+  }
 }
 
-.btn-floating {
-  transition: all 0.3s ease;
+.resumen-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+
+  span:first-child {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
 }
 
-.btn-floating:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-form {
-  max-width: 500px;
-  margin: 0 auto;
+.total-valor {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #059669;
+  letter-spacing: -0.01em;
 }
 
-
-form {
-  max-width: 500px;
-  margin: 0 auto;
+.text-info-custom {
+  color: #0284c7;
 }
 
-.card {
-  border-radius: 0.75rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+.resumen-info {
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+  
+  small {
+    color: #64748b;
+    font-size: 0.75rem;
+  }
 }
 
-.table th, .table td {
-  vertical-align: middle;
-}
-
-.btn-outline-danger.btn-sm {
-  padding: 0.25rem 0.5rem;
+// === CREATE BUTTON ===
+.btn-crear-factura {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: white;
+  border: none;
+  padding: 0.65rem 1rem;
+  font-weight: 600;
   font-size: 0.95rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #047857, #059669);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    color: white;
+  }
 }
 
-.spinner-border {
-  vertical-align: middle;
+// === FORM TWEAKS ===
+.form-label-sm {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.25rem;
 }
 
-.card {
-  border-radius: 0.75rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+.min-width-0 {
+  min-width: 0;
 }
 
-.table th, .table td {
-  vertical-align: middle;
+// === SCROLLBAR ===
+.producto-dropdown::-webkit-scrollbar {
+  width: 5px;
 }
 
-.btn-outline-danger.btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.95rem;
+.producto-dropdown::-webkit-scrollbar-track {
+  background: #f3f4f6;
 }
 
-.spinner-border {
-  vertical-align: middle;
+.producto-dropdown::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.producto-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }

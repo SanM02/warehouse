@@ -1,25 +1,8 @@
-/* Estilos para el componente de proveedores */
+// Proveedores - Component-specific styles
+// Global design system handles cards, tables, buttons, badges, modals, forms, etc.
 
 .modal.show {
   background-color: rgba(0, 0, 0, 0.5);
-}
-
-.table-hover tbody tr:hover {
-  background-color: rgba(0, 123, 255, 0.1);
-}
-
-.btn-group-sm .btn {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-}
-
-.badge {
-  font-size: 0.75em;
-}
-
-.spinner-border-sm {
-  width: 1rem;
-  height: 1rem;
 }
 
 .modal-backdrop {
@@ -30,46 +13,13 @@
   z-index: 1050;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .table-responsive {
     font-size: 0.875rem;
   }
-  
+
   .btn-group-sm .btn {
     padding: 0.125rem 0.25rem;
     font-size: 0.75rem;
   }
-}
-
-/* Estados de los proveedores */
-.bg-success {
-  background-color: #198754 !important;
-}
-
-.bg-danger {
-  background-color: #dc3545 !important;
-}
-
-/* Loading state */
-.spinner-border {
-  width: 2rem;
-  height: 2rem;
-}
-
-/* Formulario */
-.form-label {
-  font-weight: 600;
-  color: #495057;
-}
-
-.form-control:focus {
-  border-color: #0d6efd;
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-}
-
-/* Breadcrumb personalizado */
-.breadcrumb-item + .breadcrumb-item::before {
-  content: ">";
-  color: #6c757d;
 }

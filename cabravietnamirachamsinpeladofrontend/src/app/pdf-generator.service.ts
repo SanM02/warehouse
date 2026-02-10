@@ -19,7 +19,7 @@ export class PdfGeneratorService {
     
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
-    doc.text('FERRETERÍA CENTRAL', 20, 20);
+    doc.text('J&G REPUESTOS', 20, 20);
     
     doc.setFontSize(10);
     doc.text('RUC: 1234567890001', 20, 27);
@@ -80,8 +80,8 @@ export class PdfGeneratorService {
       doc.text(detalle.codigo || 'N/A', 25, yPosition);
       doc.text(detalle.producto.substring(0, 25), 55, yPosition);
       doc.text(detalle.cantidad.toString(), 125, yPosition);
-      doc.text(`₲${detalle.precio_unitario.toFixed(0)}`, 142, yPosition);
-      doc.text(`₲${detalle.subtotal.toFixed(0)}`, 167, yPosition);
+      doc.text(`₲${Math.round(detalle.precio_unitario).toLocaleString('es-PY')}`, 142, yPosition);
+      doc.text(`₲${Math.round(detalle.subtotal).toLocaleString('es-PY')}`, 167, yPosition);
       yPosition += 6;
       
       // Nueva página si es necesario
@@ -99,22 +99,22 @@ export class PdfGeneratorService {
     yPosition += 10;
     doc.setFont('helvetica', 'bold');
     doc.text('SUBTOTAL:', 140, yPosition);
-    doc.text(`₲${datosFactura.subtotal.toFixed(0)}`, 170, yPosition);
+    doc.text(`₲${Math.round(datosFactura.subtotal).toLocaleString('es-PY')}`, 170, yPosition);
     
     if (datosFactura.descuento_total && datosFactura.descuento_total > 0) {
       yPosition += 6;
       doc.text('DESCUENTO:', 140, yPosition);
-      doc.text(`-₲${datosFactura.descuento_total.toFixed(0)}`, 170, yPosition);
+      doc.text(`-₲${Math.round(datosFactura.descuento_total).toLocaleString('es-PY')}`, 170, yPosition);
     }
     
     yPosition += 6;
     doc.text('IVA (12%):', 140, yPosition);
-    doc.text(`₲${datosFactura.impuesto_total.toFixed(0)}`, 170, yPosition);
+    doc.text(`₲${Math.round(datosFactura.impuesto_total).toLocaleString('es-PY')}`, 170, yPosition);
     
     yPosition += 8;
     doc.setFontSize(12);
     doc.text('TOTAL:', 140, yPosition);
-    doc.text(`₲${datosFactura.total.toFixed(0)}`, 170, yPosition);
+    doc.text(`₲${Math.round(datosFactura.total).toLocaleString('es-PY')}`, 170, yPosition);
     
     // OBSERVACIONES
     if (datosFactura.observaciones) {
@@ -133,7 +133,7 @@ export class PdfGeneratorService {
     // PIE DE PÁGINA
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text('Gracias por su compra - Ferretería Central', 20, 280);
+    doc.text('Gracias por su compra - J&G Repuestos', 20, 280);
     doc.text(`Vendedor: ${datosFactura.vendedor?.nombre || 'Sistema'}`, 20, 285);
     
     // DESCARGAR PDF

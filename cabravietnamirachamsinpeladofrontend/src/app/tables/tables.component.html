@@ -1,6 +1,7 @@
-<h1 class="mt-4">Inventario de Productos</h1>
+<div class="container-fluid px-4">
+<h1 class="mt-3">Inventario de Productos</h1>
 <ol class="breadcrumb mb-4">
-  <li class="breadcrumb-item"><a routerLink="/">Inicio</a></li>
+  <li class="breadcrumb-item"><a routerLink="/dashboard">Dashboard</a></li>
   <li class="breadcrumb-item active">Inventario</li>
 </ol>
 <div class="card mb-4">
@@ -47,7 +48,7 @@
           <td>{{ producto.codigo }}</td>
           <td class="fw-semibold">{{ producto.nombre }}</td>
           <td>
-            <span class="badge" [ngClass]="getCategoriaClass(producto)">
+            <span class="badge" [ngStyle]="getCategoriaBadgeStyle(producto.categoria)">
               {{ producto.categoria }}
             </span>
           </td>
@@ -198,4 +199,5 @@
       
     </div>
   </div>
+</div>
 </div>

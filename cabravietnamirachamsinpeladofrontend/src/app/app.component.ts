@@ -1,8 +1,9 @@
 import { Component, Renderer2, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { getUsernameFromToken } from './jwt.utils';
-import { Router, RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -16,6 +17,7 @@ export class AppComponent implements OnInit {
   sidebarOpen = true;
   isBrowser: boolean;
   username: string | null = null;
+  isLoginPage = false;
 
   constructor(
     private router: Router,
@@ -94,10 +96,34 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
+    // Detectar ruta de login
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: NavigationEnd) => {
+      this.isLoginPage = event.urlAfterRedirects === '/login' || event.url === '/login';
+      this.updateBodyClass();
+    });
+
+    // Verificar ruta inicial
+    this.isLoginPage = this.router.url === '/login';
+
     // Asegura que la clase no quede pegada al recargar
     if (this.isBrowser) {
       this.renderer.removeClass(document.body, 'sb-sidenav-toggled');
+      this.updateBodyClass();
       this.updateUsername();
+    }
+  }
+
+  updateBodyClass() {
+    if (this.isBrowser) {
+      if (this.isLoginPage) {
+        this.renderer.removeClass(document.body, 'sb-nav-fixed');
+        this.renderer.addClass(document.body, 'login-page');
+      } else {
+        this.renderer.addClass(document.body, 'sb-nav-fixed');
+        this.renderer.removeClass(document.body, 'login-page');
+      }
     }
   }
 
