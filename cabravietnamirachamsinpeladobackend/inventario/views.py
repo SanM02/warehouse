@@ -386,7 +386,7 @@ def proveedores_dropdown(request):
     """
     from .models import Proveedor
     proveedores = Proveedor.objects.filter(activo=True).values(
-        'id', 'nombre', 'ruc'
+        'id', 'nombre', 'telefono', 'email'
     ).order_by('nombre')
     
     return Response(list(proveedores))
